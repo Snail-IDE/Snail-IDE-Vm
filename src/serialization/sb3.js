@@ -725,6 +725,13 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
         meta.origin = runtime.origin;
     }
 
+    // Attach platform information so TurboWarp, PenguinMod, and other mods can detect where the file comes from
+    const platform = Object.create(null);
+    platform.name = 'snail-ide';
+    platform.url = 'https://snail-ide.com/';
+    platform.version = 'stable';
+    meta.platform = platform;
+
     // Attach full user agent string to metadata if available
     meta.agent = '';
     // TW: Never include full user agent to slightly improve user privacy
@@ -1428,6 +1435,9 @@ const deserialize = function (json, runtime, zip, isSingleSprite) {
     // Store the origin field (e.g. project originated at CSFirst) so that we can save it again.
     if (json.meta && json.meta.origin) {
         runtime.origin = json.meta.origin;
+        if (json.meta.name && (json.meta.name !== 'snail-ide' || json.meta.name !== 'TurboWarp'))) {
+            alert(`Warning: Unknown platform ${json.meta.name}. Expect loading this project to fail.`)
+        }
     } else {
         runtime.origin = null;
     }
