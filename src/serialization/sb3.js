@@ -1435,8 +1435,8 @@ const deserialize = function (json, runtime, zip, isSingleSprite) {
     // Store the origin field (e.g. project originated at CSFirst) so that we can save it again.
     if (json.meta && json.meta.origin) {
         runtime.origin = json.meta.origin;
-        if (json.meta.name && (json.meta.name !== 'snail-ide' || json.meta.name !== 'TurboWarp'))) {
-            alert(`Warning: Unknown platform ${json.meta.name}. Expect loading this project to fail.`)
+        if (json.meta.name && (json.meta.name !== 'snail-ide' || json.meta.name !== 'TurboWarp')) {
+            alert(`Warning: This file comes from an unsupported platform named ${json.meta.name}. Expect loading this project to fail.`)
         }
     } else {
         runtime.origin = null;
