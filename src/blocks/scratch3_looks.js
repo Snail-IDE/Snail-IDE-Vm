@@ -5,6 +5,7 @@ const uid = require('../util/uid');
 const StageLayering = require('../engine/stage-layering');
 const getMonitorIdForBlockWithArgs = require('../util/get-monitor-id');
 const MathUtil = require('../util/math-util');
+const Swal = require('sweetalert2');
 
 /**
  * @typedef {object} BubbleState - the bubble state associated with a particular target.
@@ -458,8 +459,8 @@ class Scratch3LooksBlocks {
             [args.color]
         );
     }
-    tutorialModAlertBlock(args, util){
-        alert(args.MESSAGE);
+    async tutorialModAlertBlock(args, util){
+        await Swal.fire(args.MESSAGE);
     }
     setShape (args, util) {
         if (args.prop === 'texlim') {

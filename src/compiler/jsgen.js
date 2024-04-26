@@ -726,7 +726,8 @@ class JSGenerator {
             return new TypedInput(`tan(${this.descendInput(node.value).asNumber()})`, TYPE_NUMBER_NAN);
         case 'op.10^':
             return new TypedInput(`(10 ** ${this.descendInput(node.value).asNumber()})`, TYPE_NUMBER);
-
+        case 'sensing.unix':
+            return new TypedInput(`(Math.floor(Date.now() / 1000))`, TYPE_NUMBER);
         case 'sensing.answer':
             return new TypedInput(`runtime.ext_scratch3_sensing._answer`, TYPE_STRING);
         case 'sensing.colorTouchingColor':
@@ -1165,7 +1166,6 @@ class JSGenerator {
         case 'list.show':
             this.source += `runtime.monitorBlocks.changeBlock({ id: "${sanitize(node.list.id)}", element: "checkbox", value: true }, runtime);\n`;
             break;
-
         case 'looks.backwardLayers':
             if (!this.target.isStage) {
                 this.source += `target.goBackwardLayers(${this.descendInput(node.layers).asNumber()});\n`;

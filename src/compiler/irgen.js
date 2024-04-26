@@ -324,7 +324,6 @@ class ScriptTreeGenerator {
                 kind: 'control.inlineStackOutput',
                 code: this.descendSubstack(block, 'SUBSTACK')
             };
-
         case 'looks_backdropnumbername':
             if (block.fields.NUMBER_NAME.value === 'number') {
                 return {
@@ -593,7 +592,10 @@ class ScriptTreeGenerator {
                 left: this.descendInputOfBlock(block, 'NUM1'),
                 right: this.descendInputOfBlock(block, 'NUM2')
             };
-
+        case 'sensing_unix':
+            return {
+                kind: 'sensing.unix'
+            };
         case 'sensing_answer':
             return {
                 kind: 'sensing.answer'
@@ -1158,7 +1160,6 @@ class ScriptTreeGenerator {
                 kind: 'event.broadcastAndWait',
                 broadcast: this.descendInputOfBlock(block, 'BROADCAST_INPUT')
             };
-
         case 'looks_changeeffectby':
             return {
                 kind: 'looks.changeEffect',
