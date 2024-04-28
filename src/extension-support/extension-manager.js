@@ -465,6 +465,19 @@ class ExtensionManager {
         }).catch(error => this._failedLoadingExtensionScript(error));
     }
 
+    removeExtension(id) {
+        const serviceName = this._loadedExtensions.get(id);
+        dispatch.call(serviceName, 'dispose');
+        delete dispatch.services[serviceName];
+        delete this.runtime[`ext_${id}`];
+
+        this._loadedExtensions.delete(id);
+        const workerId = +serviceName.split('.')[1];
+        delete this.workerURLs[workerId];
+        dispatch.call('runtime', '_removeExtensionPrimitive', id);
+        this.refreshBlocks();
+    }
+
     /**
      * Wait until all async extensions have loaded
      * @returns {Promise} resolved when all async extensions have loaded
