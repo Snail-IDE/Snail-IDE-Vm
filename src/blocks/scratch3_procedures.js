@@ -81,6 +81,13 @@ class Scratch3ProcedureBlocks {
     argumentReporterBoolean(args, util) {
         const value = util.getParam(args.VALUE);
         if (value === null) {
+            const lowercase = String(args.VALUE).toLowerCase();
+            if (util.target.runtime.compilerOptions.enabled && lowercase === 'is compiled?') {
+                return true;
+            }
+            if (lowercase == 'is turbowarp?' || lowercase == 'is snail ide?' || lowercase == 'is pm based?') {
+                return true
+            }
             // When the parameter is not found in the most recent procedure
             // call, the default is always 0.
             return 0;
