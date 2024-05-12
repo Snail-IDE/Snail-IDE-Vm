@@ -1,5 +1,5 @@
 const formatMessage = require('format-message');
-const languageNames = require('scratch-translate-extension-languages');
+const languageNames = require('../../translations.json');
 
 const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
