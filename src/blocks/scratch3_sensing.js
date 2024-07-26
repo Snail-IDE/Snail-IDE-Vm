@@ -3,6 +3,7 @@ const Timer = require('../util/timer');
 const MathUtil = require('../util/math-util');
 const getMonitorIdForBlockWithArgs = require('../util/get-monitor-id');
 const { validateRegex } = require('../util/json-block-utilities');
+const localforage = require('localforage');
 
 class Scratch3SensingBlocks {
     constructor (runtime) {
@@ -99,7 +100,9 @@ class Scratch3SensingBlocks {
             sensing_getoperatingsystem: this.getOS,
             sensing_getbrowser: this.getBrowser,
             sensing_geturl: this.getUrl,
-            sensing_getxyoftouchingsprite: this.getXYOfTouchingSprite
+            sensing_getxyoftouchingsprite: this.getXYOfTouchingSprite,
+            sensing_savedata: this.saveData,
+            sensing_getdata: this.getData,
         };
     }
 
@@ -597,7 +600,19 @@ class Scratch3SensingBlocks {
         const unixTimestamp = Math.floor(Date.now() / 1000);
     
         return unixTimestamp;
-    }    
+    }
+
+    // Snail IDE: Added local storage blocks
+    async saveData (args) {
+        if ((localforage.getItem('si_ugc_' + String(args.NAME)) !== null) && (args.VALUE === '')) {
+            return localforage.removeItem('si_ugc_' + String(args.NAME));
+        }
+        await localforage.setItem('si_ugc_' + String(args.NAME), args.VALUE);
+    }
+
+    async getData (args) {
+       return (await localforage.getItem('si_ugc_' + String(args.NAME))) ?? '';
+    }
 }
 
 module.exports = Scratch3SensingBlocks;

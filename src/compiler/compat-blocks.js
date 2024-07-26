@@ -81,6 +81,7 @@ const statementBlocks = [
     'sound_play_at_seconds',
     'sound_play_at_seconds_until_done',
     'sound_pauseallsounds',
+    'sensing_savedata',
 ];
 
 const outputBlocks = [
@@ -165,7 +166,8 @@ const outputBlocks = [
     'operator_xnor',
     'looks_getinputofcostume',
     'sound_getTimePosition',
-    'sound_getSoundVolume'
+    'sound_getSoundVolume',
+    'sensing_getdata',
 ];
 
 module.exports = {
