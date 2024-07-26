@@ -636,6 +636,10 @@ class ScriptTreeGenerator {
                 return {
                     kind: 'sensing.second'
                 };
+            case 'millisecond':
+                return {
+                    kind: 'sensing.millisecond'
+                };
             }
             return {
                 kind: 'constant',
