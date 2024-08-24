@@ -1672,7 +1672,13 @@ class JSGenerator {
         script += `target = thread.spoofTarget;\n`;
         script += `};\n`;
 
+        script += 'try {';
         script += this.source;
+        script += '} catch (e) {;'
+        // Assume it's not a special type of error.
+        script += 'thread.target.runtime.visualReport(thread.peekStack(), "Error: " + String(e).slice(7, String(e).length));'
+        script += 'retire();return;\n';
+        script += '};';
 
         if (!this.isProcedure) {
             script += 'retire();\n';
