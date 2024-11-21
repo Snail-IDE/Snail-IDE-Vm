@@ -15,6 +15,10 @@ const log = require('./util/log');
 const MathUtil = require('./util/math-util');
 const Runtime = require('./engine/runtime');
 const StringUtil = require('./util/string-util');
+const RenderedTarget = require('./sprites/rendered-target');
+const StageLayering = require('./engine/stage-layering');
+const Sprite = require('./sprites/sprite');
+const Blocks = require('./engine/blocks');
 const formatMessage = require('format-message');
 
 const Variable = require('./engine/variable');
@@ -28,7 +32,11 @@ const {exportCostume} = require('./serialization/tw-costume-import-export');
 const Base64Util = require('./util/base64-util');
 
 const RESERVED_NAMES = ['_mouse_', '_stage_', '_edge_', '_myself_', '_random_'];
-const PM_LIBRARY_API = "https://penguinmod-objectlibraries.vercel.app/";
+const PM_LIBRARY_API = "https://library.penguinmod.com/";
+
+const IRGenerator = require('./compiler/irgen');
+const JSGenerator = require('./compiler/jsgen');
+const jsexecute = require('./compiler/jsexecute');
 
 const CORE_EXTENSIONS = [
     // 'motion',
@@ -113,6 +121,9 @@ class VirtualMachine extends EventEmitter {
         this.runtime.on(Runtime.VISUAL_REPORT, visualReport => {
             this.emit(Runtime.VISUAL_REPORT, visualReport);
         });
+        this.runtime.on(Runtime.BLOCK_STACK_ERROR, visualReport => {
+            this.emit(Runtime.BLOCK_STACK_ERROR, visualReport);
+        });
         this.runtime.on(Runtime.TARGETS_UPDATE, emitProjectChanged => {
             this.emitTargetsUpdate(emitProjectChanged);
         });
@@ -127,6 +138,9 @@ class VirtualMachine extends EventEmitter {
         });
         this.runtime.on(Runtime.EXTENSION_ADDED, categoryInfo => {
             this.emit(Runtime.EXTENSION_ADDED, categoryInfo);
+        });
+        this.runtime.on(Runtime.EXTENSION_REMOVED, () => {
+            this.emit(Runtime.EXTENSION_REMOVED);
         });
         this.runtime.on(Runtime.EXTENSION_FIELD_ADDED, (fieldName, fieldImplementation) => {
             this.emit(Runtime.EXTENSION_FIELD_ADDED, fieldName, fieldImplementation);
@@ -167,6 +181,12 @@ class VirtualMachine extends EventEmitter {
         this.runtime.on(Runtime.RUNTIME_STARTED, () => {
             this.emit(Runtime.RUNTIME_STARTED);
         });
+        this.runtime.on(Runtime.RUNTIME_PAUSED, () => {
+            this.emit(Runtime.RUNTIME_PAUSED);
+        });
+        this.runtime.on(Runtime.RUNTIME_UNPAUSED, () => {
+            this.emit(Runtime.RUNTIME_UNPAUSED);
+        });
         this.runtime.on(Runtime.RUNTIME_STOPPED, () => {
             this.emit(Runtime.RUNTIME_STOPPED);
         });
@@ -201,6 +221,7 @@ class VirtualMachine extends EventEmitter {
         this.extensionManager = new ExtensionManager(this);
         this.securityManager = this.extensionManager.securityManager;
         this.runtime.extensionManager = this.extensionManager;
+        this.runtime.vm = this;
 
         // Load core extensions
         for (const id of CORE_EXTENSIONS) {
@@ -214,6 +235,24 @@ class VirtualMachine extends EventEmitter {
         this.addListener('workspaceUpdate', () => {
             this.extensionManager.refreshDynamicCategorys();
         });
+        
+        /**
+         * Export some internal classes for extensions.
+         */
+        this.exports = {
+            Sprite,
+            RenderedTarget,
+            JSZip,
+            JSGenerator,
+            IRGenerator,
+            jsexecute,
+            loadCostume,
+            loadSound,
+            Blocks,
+            StageLayering,
+            Thread: require('./engine/thread.js'),
+            execute: require('./engine/execute.js')
+        };
     }
 
     /**
@@ -456,7 +495,7 @@ class VirtualMachine extends EventEmitter {
             .catch(error => {
                 // Intentionally rejecting here (want errors to be handled by caller)
                 if (error.hasOwnProperty('validationError')) {
-                    return Promise.reject(JSON.stringify(error));
+                    return Promise.reject(JSON.stringify(error, null, 4));
                 }
                 return Promise.reject(error);
             });
@@ -487,8 +526,6 @@ class VirtualMachine extends EventEmitter {
      * @returns {JSZip} JSZip zip object representing the sb3.
      */
     _saveProjectZip () {
-        const soundDescs = serializeSounds(this.runtime);
-        const costumeDescs = serializeCostumes(this.runtime);
         const projectJson = this.toJSON();
 
         // TODO want to eventually move zip creation out of here, and perhaps
@@ -497,8 +534,15 @@ class VirtualMachine extends EventEmitter {
 
         // Put everything in a zip file
         zip.file('project.json', projectJson);
-        this._addFileDescsToZip(soundDescs.concat(costumeDescs), zip);
+        this._addFileDescsToZip(this.serializeAssets(), zip);
 
+        // Use a fixed modification date for the files in the zip instead of letting JSZip use the
+        // current time to avoid a very small metadata leak and make zipping deterministic. The magic
+        // number is from the first TurboWarp/scratch-vm commit after forking
+        const date = new Date(1591657163000);
+        for (const file of Object.values(zip.files)) {
+            file.date = date;
+        }
         return zip;
     }
 
@@ -534,29 +578,50 @@ class VirtualMachine extends EventEmitter {
      * @returns {Record<string, Uint8Array>} Map of file name to the raw data for that file.
      */
     saveProjectSb3DontZip () {
-        const soundDescs = serializeSounds(this.runtime);
-        const costumeDescs = serializeCostumes(this.runtime);
         const projectJson = this.toJSON();
 
         const files = {
             'project.json': new _TextEncoder().encode(projectJson)
         };
-        for (const fileDesc of soundDescs.concat(costumeDescs)) {
+        for (const fileDesc of this.serializeAssets()) {
             files[fileDesc.fileName] = fileDesc.fileContent;
         }
 
         return files;
     }
 
-    /*
-     * @type {Array<object>} Array of all costumes and sounds currently in the runtime
+    /**
+     * @type {Array<object>} Array of all assets currently in the runtime
      */
     get assets () {
-        return this.runtime.targets.reduce((acc, target) => (
+        const costumesAndSounds = this.runtime.targets.reduce((acc, target) => (
             acc
                 .concat(target.sprite.sounds.map(sound => sound.asset))
                 .concat(target.sprite.costumes.map(costume => costume.asset))
         ), []);
+        const fonts = this.runtime.fontManager.serializeAssets();
+        return [
+            ...costumesAndSounds,
+            ...fonts
+        ];
+    }
+
+    /**
+     * @param {string} targetId Optional ID of target to export
+     * @returns {Array<{fileName: string; fileContent: Uint8Array;}} list of file descs
+     */
+    serializeAssets(targetId) {
+        const costumeDescs = serializeCostumes(this.runtime, targetId);
+        const soundDescs = serializeSounds(this.runtime, targetId);
+        const fontDescs = this.runtime.fontManager.serializeAssets().map(asset => ({
+            fileName: `${asset.assetId}.${asset.dataFormat}`,
+            fileContent: asset.data
+        }));
+        return [
+            ...costumeDescs,
+            ...soundDescs,
+            ...fontDescs
+        ];
     }
 
     _addFileDescsToZip (fileDescs, zip) {
@@ -579,13 +644,11 @@ class VirtualMachine extends EventEmitter {
      * specified by optZipType or blob by default.
      */
     exportSprite (targetId, optZipType) {
-        const soundDescs = serializeSounds(this.runtime, targetId);
-        const costumeDescs = serializeCostumes(this.runtime, targetId);
         const spriteJson = this.toJSON(targetId);
 
         const zip = new JSZip();
         zip.file('sprite.json', spriteJson);
-        this._addFileDescsToZip(soundDescs.concat(costumeDescs), zip);
+        this._addFileDescsToZip(this.serializeAssets(targetId), zip);
 
         return zip.generateAsync({
             type: typeof optZipType === 'string' ? optZipType : 'blob',
@@ -673,23 +736,21 @@ class VirtualMachine extends EventEmitter {
     async _loadExtensions (extensionIDs, extensionURLs = new Map()) {
         const extensionPromises = [];
         for (const extensionID of extensionIDs) {
+            const url = extensionURLs.get(extensionID);
             if (this.extensionManager.isExtensionLoaded(extensionID)) {
                 // Already loaded
-            } else if (this.extensionManager.isBuiltinExtension(extensionID)) {
-                // Builtin extension
-                this.extensionManager.loadExtensionIdSync(extensionID);
-                continue;
-            } else {
-                // Custom extension
-                const url = extensionURLs.get(extensionID);
-                if (!url) {
-                    throw new Error(`Unknown extension: ${extensionID}`);
-                }
+            } else if (url) {
+                // extension url
                 if (await this.securityManager.canLoadExtensionFromProject(url)) {
                     extensionPromises.push(this.extensionManager.loadExtensionURL(url));
                 } else {
                     throw new Error(`Permission to load extension denied: ${extensionID}`);
                 }
+            } else if (this.extensionManager.isBuiltinExtension(extensionID)) {
+                // Builtin extension
+                this.extensionManager.loadExtensionIdSync(extensionID);
+            } else {
+                throw new Error(`Unknown extension: ${extensionID}`);
             }
         }
         return Promise.all(extensionPromises);
@@ -709,9 +770,11 @@ class VirtualMachine extends EventEmitter {
 
         return this._loadExtensions(extensions.extensionIDs, extensions.extensionURLs).then(() => {
             for (const extension of extensions.extensionIDs) {
-                if ((typeof this.runtime[`ext_${extension}`].deserialize === 'function') && 
-                    extensions.extensionData[extension]) {
-                    this.runtime[`ext_${extension}`].deserialize(extensions.extensionData[extension]);
+                if (`ext_${extension}` in this.runtime) {
+                    if ((typeof this.runtime[`ext_${extension}`].deserialize === 'function') && 
+                        extensions.extensionData[extension]) {
+                        this.runtime[`ext_${extension}`].deserialize(extensions.extensionData[extension]);
+                    }
                 }
             }
             targets.forEach(target => {
@@ -846,6 +909,36 @@ class VirtualMachine extends EventEmitter {
         const target = optTargetId ? this.runtime.getTargetById(optTargetId) :
             this.editingTarget;
         if (target) {
+            if (costumeObject.fromPenguinModLibrary === true) {
+                return new Promise((resolve, reject) => {
+                    fetch(`${PM_LIBRARY_API}files/${costumeObject.libraryId}`)
+                        .then((r) => r.arrayBuffer())
+                        .then((arrayBuffer) => {
+                            const dataFormat = costumeObject.dataFormat;
+                            const storage = this.runtime.storage;
+                            const asset = new storage.Asset(
+                                storage.AssetType[dataFormat === 'svg' ? "ImageVector" : "ImageBitmap"],
+                                null,
+                                storage.DataFormat[dataFormat.toUpperCase()],
+                                new Uint8Array(arrayBuffer),
+                                true
+                            );
+                            const newCostumeObject = {
+                                md5: asset.assetId + '.' + asset.dataFormat,
+                                asset: asset,
+                                name: costumeObject.name
+                            }
+                            loadCostume(newCostumeObject.md5, newCostumeObject, this.runtime, optVersion).then(costumeAsset => {
+                                target.addCostume(newCostumeObject);
+                                target.setCostume(
+                                    target.getCostumes().length - 1
+                                );
+                                this.runtime.emitProjectChanged();
+                                resolve(costumeAsset, newCostumeObject);
+                            })
+                        }).catch(reject);
+                });
+            }
             return loadCostume(md5ext, costumeObject, this.runtime, optVersion).then(costumeObject => {
                 target.addCostume(costumeObject);
                 target.setCostume(
@@ -933,6 +1026,20 @@ class VirtualMachine extends EventEmitter {
     }
 
     /**
+     * Pause running scripts
+     */
+    pause() {
+        this.runtime.pause();
+    }
+
+    /**
+     * Unpause running scripts
+     */
+    play() {
+        this.runtime.play();
+    }
+
+    /**
      * Add a sound to the current editing target.
      * @param {!object} soundObject Object representing the costume.
      * @param {string} optTargetId - the id of the target to add to, if not the editing target.
@@ -964,7 +1071,7 @@ class VirtualMachine extends EventEmitter {
                                 target.addSound(newSoundObject);
                                 this.emitTargetsUpdate();
                                 resolve(soundAsset, newSoundObject);
-                            })
+                            });
                         }).catch(reject);
                 });
             }
@@ -1223,7 +1330,36 @@ class VirtualMachine extends EventEmitter {
      * @property {number} [bitmapResolution] - the resolution scale for a bitmap backdrop.
      * @returns {?Promise} - a promise that resolves when the backdrop has been added
      */
-    addBackdrop (md5ext, backdropObject) {
+    addBackdrop(md5ext, backdropObject) {
+        if (backdropObject.fromPenguinModLibrary === true) {
+            return new Promise((resolve, reject) => {
+                fetch(`${PM_LIBRARY_API}files/${backdropObject.libraryId}`)
+                    .then((r) => r.arrayBuffer())
+                    .then((arrayBuffer) => {
+                        const dataFormat = backdropObject.dataFormat;
+                        const storage = this.runtime.storage;
+                        const asset = new storage.Asset(
+                            storage.AssetType[dataFormat === 'svg' ? "ImageVector" : "ImageBitmap"],
+                            null,
+                            storage.DataFormat[dataFormat.toUpperCase()],
+                            new Uint8Array(arrayBuffer),
+                            true
+                        );
+                        const newCostumeObject = {
+                            md5: asset.assetId + '.' + asset.dataFormat,
+                            asset: asset,
+                            name: backdropObject.name
+                        }
+                        loadCostume(newCostumeObject.md5, newCostumeObject, this.runtime).then(costumeAsset => {
+                            const stage = this.runtime.getTargetForStage();
+                            stage.addCostume(newCostumeObject);
+                            stage.setCostume(stage.getCostumes().length - 1);
+                            this.runtime.emitProjectChanged();
+                            resolve(costumeAsset, newCostumeObject);
+                        })
+                    }).catch(reject);
+            });
+        }
         return loadCostume(md5ext, backdropObject, this.runtime).then(() => {
             const stage = this.runtime.getTargetForStage();
             stage.addCostume(backdropObject);
@@ -1515,6 +1651,16 @@ class VirtualMachine extends EventEmitter {
     }
 
     /**
+     * @param {Block[]} blockObjects
+     * @returns {object}
+     */
+    exportStandaloneBlocks (blockObjects) {
+        const sb3 = require('./serialization/sb3');
+        const serialized = sb3.serializeStandaloneBlocks(blockObjects, this.runtime);
+        return serialized;
+    }
+
+    /**
      * Called when blocks are dragged from one sprite to another. Adds the blocks to the
      * workspace of the given target.
      * @param {!Array<object>} blocks Blocks to add.
@@ -1526,7 +1672,7 @@ class VirtualMachine extends EventEmitter {
     shareBlocksToTarget (blocks, targetId, optFromTargetId) {
         const sb3 = require('./serialization/sb3');
 
-        const copiedBlocks = JSON.parse(JSON.stringify(blocks));
+        const {blocks: copiedBlocks, extensionURLs} = sb3.deserializeStandaloneBlocks(blocks);
         newBlockIds(copiedBlocks);
         const target = this.runtime.getTargetById(targetId);
 
@@ -1544,7 +1690,7 @@ class VirtualMachine extends EventEmitter {
             .filter(id => !this.extensionManager.isExtensionLoaded(id)) // and remove loaded extensions
         );
 
-        return this._loadExtensions(extensionIDs).then(() => {
+        return this._loadExtensions(extensionIDs, extensionURLs).then(() => {
             copiedBlocks.forEach(block => {
                 target.blocks.createBlock(block);
             });

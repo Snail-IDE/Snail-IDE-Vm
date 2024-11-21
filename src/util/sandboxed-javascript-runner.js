@@ -101,7 +101,7 @@ const prepareCodeForEval = (code) => {
     const escaped = JSON.stringify(code);
     // when the html encounters a closing script tag, itll end the script
     // so just put a backslash before it and it should be fine
-    const scriptEscaped = escaped.replace('<\/script>', '<\\/script>');
+    const scriptEscaped = escaped.replaceAll('<\/script>', '<\\/script>');
     return scriptEscaped;
 }
 

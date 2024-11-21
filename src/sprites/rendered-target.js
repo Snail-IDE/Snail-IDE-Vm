@@ -2,6 +2,7 @@ const MathUtil = require('../util/math-util');
 const StringUtil = require('../util/string-util');
 const Cast = require('../util/cast');
 const Clone = require('../util/clone');
+const { translateForCamera } = require('../util/pos-math');
 const Target = require('../engine/target');
 const StageLayering = require('../engine/stage-layering');
 
@@ -59,7 +60,11 @@ class RenderedTarget extends Target {
             red: 0,
             green: 0,
             blue: 0,
-            opaque: 0
+            opaque: 0,
+            saturation: 0,
+            // we add 1 since 0x000000 = 0, effects set to 0 will not even be enabled in the shader 
+            // (so we can never tint to black if we didnt add 1)
+            tintColor: 0xffffff + 1 
         };
 
         /**
@@ -74,6 +79,12 @@ class RenderedTarget extends Target {
          * @type {boolean}
          */
         this.isStage = false;
+
+        /**
+         * Whether this rendered target has been disposed.
+         * @type {boolean}
+         */
+        this.isDisposed = false;
 
         /**
          * Scratch X coordinate. Currently should range from -240 to 240.
@@ -184,6 +195,15 @@ class RenderedTarget extends Target {
         this.onTargetVisualChange = null;
 
         this.interpolationData = null;
+
+        this.cameraBound = 'default';
+    }
+    cameraUpdateEvent() {
+        const {direction, scale} = this._getRenderedDirectionAndScale();
+        const translatedPos = this._translatePossitionToCamera();
+        this.renderer.updateDrawablePosition(this.drawableID, translatedPos);
+        this.renderer.updateDrawableDirectionScale(this.drawableID, direction, scale, this.transform);
+        this.renderer.updateDrawableVisible(this.drawableID, this.visible);
     }
 
     /**
@@ -286,6 +306,21 @@ class RenderedTarget extends Target {
         }
     }
 
+    bindToCamera(screen) {
+        this.cameraBound = screen;
+        this.updateAllDrawableProperties();
+    }
+
+    removeCameraBinding() {
+        this.cameraBound = null;
+        this.updateAllDrawableProperties();
+    }
+
+    _translatePossitionToCamera() {
+        if (!this.cameraBound) return [this.x, this.y];
+        return translateForCamera(this.runtime, this.cameraBound, this.x, this.y);
+    }
+
     /**
      * Set the X and Y coordinates.
      * @param {!number} x New X coordinate, in Scratch coordinates.
@@ -304,7 +339,7 @@ class RenderedTarget extends Target {
             this.x = position[0];
             this.y = position[1];
 
-            this.renderer.updateDrawablePosition(this.drawableID, position);
+            this.renderer.updateDrawablePosition(this.drawableID, this._translatePossitionToCamera());
             if (this.visible) {
                 this.emitVisualChange();
                 this.runtime.requestRedraw();
@@ -342,6 +377,7 @@ class RenderedTarget extends Target {
      * @return {object<string, number>} Direction and scale to render.
      */
     _getRenderedDirectionAndScale () {
+        const cameraState = this.runtime.getCamera(this.cameraBound);
         // Default: no changes to `this.direction` or `this.scale`.
         let finalDirection = this.direction;
         let finalScale = [this.size, this.size];
@@ -365,6 +401,12 @@ class RenderedTarget extends Target {
         }
         finalScale[0] *= this.stretch[0] / 100;
         finalScale[1] *= this.stretch[1] / 100;
+
+        if (this.cameraBound) {
+            finalScale[0] *= cameraState.scale;
+            finalScale[1] *= cameraState.scale;
+            finalDirection -= cameraState.dir;
+        }
         return {direction: finalDirection, scale: finalScale, stretch: this.stretch};
     }
 
@@ -452,18 +494,7 @@ class RenderedTarget extends Target {
             return;
         }
         if (this.renderer) {
-            // Clamp to scales relative to costume and stage size.
-            // See original ScratchSprite.as:setSize.
-            const costumeSize = this.renderer.getCurrentSkinSize(this.drawableID);
-            const origW = costumeSize[0];
-            const origH = costumeSize[1];
-            const fencing = this.runtime.runtimeOptions.fencing;
-            const minScale = fencing ? Math.min(1, Math.max(5 / origW, 5 / origH)) : 0;
-            const maxScale = fencing ? Math.min(
-                (1.5 * this.runtime.stageWidth) / origW,
-                (1.5 * this.runtime.stageHeight) / origH
-            ) : Infinity;
-            this.size = MathUtil.clamp(size / 100, minScale, maxScale) * 100;
+            this.size = Math.max(0, size);
             const {direction, scale} = this._getRenderedDirectionAndScale();
             this.renderer.updateDrawableDirectionScale(this.drawableID, direction, scale, this.transform);
             if (this.visible) {
@@ -770,7 +801,8 @@ class RenderedTarget extends Target {
     updateAllDrawableProperties () {
         if (this.renderer) {
             const {direction, scale} = this._getRenderedDirectionAndScale();
-            this.renderer.updateDrawablePosition(this.drawableID, [this.x, this.y]);
+            const translatedPos = this._translatePossitionToCamera();
+            this.renderer.updateDrawablePosition(this.drawableID, translatedPos);
             this.renderer.updateDrawableDirectionScale(this.drawableID, direction, scale, this.transform);
             this.renderer.updateDrawableVisible(this.drawableID, this.visible);
 
@@ -834,9 +866,10 @@ class RenderedTarget extends Target {
     /**
      * Return whether this target is touching the mouse, an edge, or a sprite.
      * @param {string} requestedObject an id for mouse or edge, or a sprite name.
+     * @param {boolean?} unoriginalOnly if true, will use isTouchingSpriteUnoriginals when checking sprites.
      * @return {boolean} True if the sprite is touching the object.
      */
-    isTouchingObject (requestedObject) { // used by compiler
+    isTouchingObject (requestedObject, unoriginalOnly) { // used by compiler
         if (requestedObject === '_mouse_') {
             if (!this.runtime.ioDevices.mouse) return false;
             const mouseX = this.runtime.ioDevices.mouse.getClientX();
@@ -845,7 +878,12 @@ class RenderedTarget extends Target {
         } else if (requestedObject === '_edge_') {
             return this.isTouchingEdge();
         }
-        return this.isTouchingSprite(requestedObject);
+
+        if (unoriginalOnly) {
+            return this.isTouchingSpriteUnoriginals(requestedObject);
+        } else {
+            return this.isTouchingSprite(requestedObject);
+        }
     }
 
     /**
@@ -895,6 +933,25 @@ class RenderedTarget extends Target {
         // can detect other sprites using touching <sprite>, but cannot be detected
         // by other sprites while it is being dragged. This matches Scratch 2.0 behavior.
         const drawableCandidates = firstClone.sprite.clones.filter(clone => !clone.dragging)
+            .map(clone => clone.drawableID);
+        return this.renderer.isTouchingDrawables(
+            this.drawableID, drawableCandidates);
+    }
+    /**
+     * Return whether touching any of a named sprite's unoriginal clones.
+     * @param {string} spriteName Name of the sprite.
+     * @return {boolean} True if touching a clone of the sprite with isOriginal set to false.
+     */
+    isTouchingSpriteUnoriginals (spriteName) {
+        spriteName = Cast.toString(spriteName);
+        const firstClone = this.runtime.getSpriteTargetByName(spriteName);
+        if (!firstClone || !this.renderer) {
+            return false;
+        }
+        // Filter out dragging targets. This means a sprite that is being dragged
+        // can detect other sprites using touching <sprite>, but cannot be detected
+        // by other sprites while it is being dragged. This matches Scratch 2.0 behavior.
+        const drawableCandidates = firstClone.sprite.clones.filter(clone => !clone.dragging && !clone.isOriginal)
             .map(clone => clone.drawableID);
         return this.renderer.isTouchingDrawables(
             this.drawableID, drawableCandidates);
@@ -1085,6 +1142,7 @@ class RenderedTarget extends Target {
         newClone.rotationStyle = this.rotationStyle;
         newClone.effects = Clone.simple(this.effects);
         newClone.variables = this.duplicateVariables();
+        newClone.cameraBound = this.cameraBound;
         newClone._edgeActivatedHatValues = Clone.simple(this._edgeActivatedHatValues);
         newClone.initDrawable(StageLayering.SPRITE_LAYER);
         newClone.updateAllDrawableProperties();
@@ -1106,10 +1164,12 @@ class RenderedTarget extends Target {
             newTarget.draggable = this.draggable;
             newTarget.visible = this.visible;
             newTarget.size = this.size;
+            newTarget.stretch = this.stretch;
             newTarget.currentCostume = this.currentCostume;
             newTarget.rotationStyle = this.rotationStyle;
             newTarget.effects = JSON.parse(JSON.stringify(this.effects));
             newTarget.variables = this.duplicateVariables(newTarget.blocks);
+            newTarget.cameraBound = this.cameraBound;
             newTarget.updateAllDrawableProperties();
             return newTarget;
         });
@@ -1184,6 +1244,7 @@ class RenderedTarget extends Target {
             id: this.id,
             name: this.getName(),
             isStage: this.isStage,
+            isDisposed: this.isDisposed,
             x: this.x,
             y: this.y,
             size: this.size,
@@ -1212,9 +1273,13 @@ class RenderedTarget extends Target {
      * Dispose, destroying any run-time properties.
      */
     dispose () {
+        // pm: remove this event
+        this.runtime.removeListener('CAMERA_CHANGED', this.cameraUpdateEvent);
+
         if (!this.isOriginal) {
             this.runtime.changeCloneCounter(-1);
         }
+        this.isDisposed = true;
         this.runtime.stopForTarget(this);
         this.runtime.removeExecutable(this);
         this.sprite.removeClone(this);

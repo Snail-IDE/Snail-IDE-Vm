@@ -11,10 +11,13 @@ const Icon = require("./icon.svg");
 
 /**
  * Class for Scratch Authentication blocks
+ * Class for Scratch Authentication blocks
  * @constructor
  */
 let currentPrivateCode = '';
+let currentPrivateCode = '';
 class JgScratchAuthenticateBlocks {
+    constructor(runtime) {
     constructor(runtime) {
         /**
          * The runtime instantiating this block package.
@@ -31,14 +34,26 @@ class JgScratchAuthenticateBlocks {
         this.loginInfo = {};
 
         // legacy
+
+        this.promptStatus = {
+            inProgress: false,
+            blocked: false,
+            completed: false,
+            userClosed: false,
+        };
+        this.loginInfo = {};
+
+        // legacy
         this.keepAllowingAuthBlock = true;
         this.disableConfirmationShown = false;
     }
 
 
+
     /**
      * dummy function for reseting user provided permisions when a save is loaded
      */
+    deserialize() {
     deserialize() {
         this.disableConfirmationShown = false;
     }
@@ -46,6 +61,7 @@ class JgScratchAuthenticateBlocks {
     /**
      * @returns {object} metadata for this extension and its blocks.
      */
+    getInfo() {
     getInfo() {
         return {
             id: 'jgScratchAuthenticate',
@@ -55,7 +71,12 @@ class JgScratchAuthenticateBlocks {
             blockIconURI: Icon,
             // TODO: docs doesnt exist, make some docs
             // docsURI: 'https://docs.penguinmod.com/extensions/scratch-auth',
+            color2: '#ff8C00',
+            blockIconURI: Icon,
+            // TODO: docs doesnt exist, make some docs
+            // docsURI: 'https://docs.penguinmod.com/extensions/scratch-auth',
             blocks: [
+                // LEGACY BLOCK
                 // LEGACY BLOCK
                 {
                     opcode: 'authenticate',
@@ -65,6 +86,7 @@ class JgScratchAuthenticateBlocks {
                         description: "Block that returns the user's name on Scratch."
                     }),
                     disableMonitor: true,
+                    hideFromPalette: true,
                     hideFromPalette: true,
                     arguments: {
                         NAME: { type: ArgumentType.STRING, defaultValue: "PenguinMod" }

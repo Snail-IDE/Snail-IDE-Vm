@@ -4,6 +4,7 @@ const TargetType = require('../../extension-support/target-type');
 const Cast = require('../../util/cast');
 const Clone = require('../../util/clone');
 const Color = require('../../util/color');
+const { translateForCamera } = require('../../util/pos-math');
 const formatMessage = require('format-message');
 const MathUtil = require('../../util/math-util');
 const log = require('../../util/log');
@@ -18,6 +19,25 @@ const blockIconURI = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0i
 
 // aka nothing because every image is way too big just like your mother
 const DefaultDrawImage = 'data:image/png;base64,'; 
+
+const SANS_SERIF_ID = 'Sans Serif';
+const SERIF_ID = 'Serif';
+const HANDWRITING_ID = 'Handwriting';
+const MARKER_ID = 'Marker';
+const CURLY_ID = 'Curly';
+const PIXEL_ID = 'Pixel';
+
+/* PenguinMod Fonts */
+const PLAYFUL_ID = 'Playful';
+const BUBBLY_ID = 'Bubbly';
+const BITSANDBYTES_ID = 'Bits and Bytes';
+const TECHNOLOGICAL_ID = 'Technological';
+const ARCADE_ID = 'Arcade';
+const ARCHIVO_ID = 'Archivo';
+const ARCHIVOBLACK_ID = 'Archivo Black';
+const SCRATCH_ID = 'Scratch';
+
+const RANDOM_ID = 'Random';
 
 /**
  * Enum for pen color parameter values.
@@ -54,6 +74,17 @@ const ItalicsParam = {
 const LayerNames = {
     'front': StageLayering.PEN_LAYER,
     'back': StageLayering.SPRITE_LAYER
+};
+
+const parseArray = (string) => {
+    let array;
+    try {
+        array = JSON.parse(string);
+    } catch {
+        array = [];
+    }
+    if (!Array.isArray(array)) return [];
+    return array;
 };
 
 /**
@@ -105,11 +136,15 @@ class Scratch3PenBlocks {
 
         this._onTargetCreated = this._onTargetCreated.bind(this);
         this._onTargetMoved = this._onTargetMoved.bind(this);
+        this._onCameraMoved = this._onCameraMoved.bind(this);
 
         runtime.on('targetWasCreated', this._onTargetCreated);
         runtime.on('RUNTIME_DISPOSED', this.clear.bind(this));
+        // runtime.on('CAMERA_CHANGED', this._onCameraMoved);
 
         this.preloadedImages = {};
+
+        this.cameraBound = -1;
     }
 
     /**
@@ -192,7 +227,6 @@ class Scratch3PenBlocks {
             this.runtime.renderer.updateDrawableSkinId(this.bitmapDrawableID, this.bitmapSkinID);
             this.runtime.renderer.updateDrawableVisible(this.bitmapDrawableID, false);
         }
-        this._penRes = this.runtime.renderer._allSkins[this._penSkinId].renderQuality;
         return this._penSkinId;
     }
 
@@ -243,9 +277,37 @@ class Scratch3PenBlocks {
             const penSkinId = this._getPenLayerID();
             if (penSkinId >= 0) {
                 const penState = this._getPenState(target);
-                this.runtime.renderer.penLine(penSkinId, penState.penAttributes, oldX, oldY, target.x, target.y);
+                // find the rendered possition of the sprite rather then the true possition of the sprite
+                const [newX, newY] = target._translatePossitionToCamera();
+                if (target.cameraBound >= 0) {
+                    [oldX, oldY] = translateForCamera(this.runtime, target.cameraBound, oldX, oldY);
+                }
+                this.runtime.renderer.penLine(penSkinId, penState.penAttributes, oldX, oldY, newX, newY);
                 this.runtime.requestRedraw();
             }
+        }
+    }
+
+    _onCameraMoved(screen) {
+        if (screen !== this.cameraBound) return;
+        const cameraState = this.runtime.cameraStates[screen];
+        const penSkinId = this._getPenLayerID();
+        if (penSkinId >= 0) {
+            this.runtime.renderer.penTranslate(penSkinId, ...cameraState.pos, cameraState.scale, cameraState.dir);
+        }
+        this.runtime.requestRedraw();
+    }
+
+    bindToCamera(screen) {
+        this.cameraBound = screen;
+        this._onCameraMoved();
+    }
+
+    removeCameraBinding() {
+        this.cameraBound = -1;
+        const penSkinId = this._getPenLayerID();
+        if (penSkinId >= 0) {
+            this.runtime.renderer.penTranslate(penSkinId, 0, 0, 1, 0);
         }
     }
 
@@ -378,6 +440,60 @@ class Scratch3PenBlocks {
         return 1.0 - (transparency / 100.0);
     }
 
+    _getFonts() {
+        return [{
+            text: 'Sans Serif',
+            value: SANS_SERIF_ID
+        }, {
+            text: 'Serif',
+            value: SERIF_ID
+        }, {
+            text: 'Handwriting',
+            value: HANDWRITING_ID
+        }, {
+            text: 'Marker',
+            value: MARKER_ID
+        }, {
+            text: 'Curly',
+            value: CURLY_ID
+        }, {
+            text: 'Pixel',
+            value: PIXEL_ID
+        }, {
+            text: 'Playful',
+            value: PLAYFUL_ID
+        }, {
+            text: 'Bubbly',
+            value: BUBBLY_ID
+        }, {
+            text: 'Arcade',
+            value: ARCADE_ID
+        }, {
+            text: 'Bits and Bytes',
+            value: BITSANDBYTES_ID
+        }, {
+            text: 'Technological',
+            value: TECHNOLOGICAL_ID
+        }, {
+            text: 'Scratch',
+            value: SCRATCH_ID
+        }, {
+            text: 'Archivo',
+            value: ARCHIVO_ID
+        }, {
+            text: 'Archivo Black',
+            value: ARCHIVOBLACK_ID
+        },
+        ...this.runtime.fontManager.getFonts().map(i => ({
+            text: i.name,
+            value: i.family
+        })),
+        {
+            text: 'random font',
+            value: RANDOM_ID
+        }];
+    }
+
     /**
      * @returns {object} metadata for this extension and its blocks.
      */
@@ -421,7 +537,8 @@ class Scratch3PenBlocks {
                     arguments: {
                         FONT: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'Arial'
+                            defaultValue: 'Arial',
+                            menu: 'FONT'
                         }
                     }
                 },
@@ -685,6 +802,36 @@ class Scratch3PenBlocks {
                     hideFromPalette: false
                 },
                 {
+                    opcode: 'draw4SidedComplexShape',
+                    blockType: BlockType.COMMAND,
+                    text: 'draw quadrilateral [SHAPE] with fill [COLOR]',
+                    arguments: {
+                        SHAPE: {
+                            type: ArgumentType.POLYGON,
+                            nodes: 4
+                        },
+                        COLOR: {
+                            type: ArgumentType.COLOR
+                        }
+                    },
+                    hideFromPalette: false
+                },
+                {
+                    opcode: 'drawArrayComplexShape',
+                    blockType: BlockType.COMMAND,
+                    text: 'draw polygon from points [SHAPE] with fill [COLOR]',
+                    arguments: {
+                        SHAPE: {
+                            type: ArgumentType.STRING,
+                            defaultValue: '[-20, 20, 20, 20, 0, -20]'
+                        },
+                        COLOR: {
+                            type: ArgumentType.COLOR
+                        }
+                    },
+                    hideFromPalette: false
+                },
+                {
                     opcode: 'penDown',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
@@ -889,6 +1036,10 @@ class Scratch3PenBlocks {
                     acceptReporters: false,
                     items: this.getItalicsToggleParam()
                 },
+                FONT: {
+                    items: '_getFonts',
+                    isTypeable: true
+                }
             }
         };
     }
@@ -919,134 +1070,98 @@ class Scratch3PenBlocks {
         this.printTextAttribute.weight = args.WEIGHT;
     }
     setPrintFontItalics (args) {
-        this.printTextAttribute.italic = args.OPTION == ItalicsParam.ON ? true : false
+        this.printTextAttribute.italic = args.OPTION === ItalicsParam.ON;
     }
     printText (args) {
         const ctx = this._getBitmapCanvas();
 
         let resultFont = '';
-        resultFont += `${this.printTextAttribute.italic ? 'italic ' : ''}`
-        resultFont += `${this.printTextAttribute.weight} `
-        resultFont += `${this.printTextAttribute.size * this._penRes}px `;
+        resultFont += `${this.printTextAttribute.italic ? 'italic ' : ''}`;
+        resultFont += `${this.printTextAttribute.weight} `;
+        resultFont += `${this.printTextAttribute.size}px `;
         resultFont += this.printTextAttribute.font;
         ctx.font = resultFont;
 
         ctx.strokeStyle = this.printTextAttribute.color;
         ctx.fillStyle = ctx.strokeStyle;
 
-        ctx.fillText(args.TEXT, args.X * this._penRes, -args.Y * this._penRes);
+        ctx.fillText(args.TEXT, args.X, -args.Y);
 
         this._drawContextToPen(ctx);
     }
 
-    _drawUriImagePromiseHandler (thiss) {
-        return ((resolve, args, preloadedImage) => {
-            let URI, X, Y, WIDTH, HEIGHT, ROTATE, CROPX, CROPY, CROPW, CROPH = null;
-            if (args) {
-                URI    = args.URI;
-                X      = args.X;
-                Y      = args.Y;
-                WIDTH  = args.WIDTH;
-                HEIGHT = args.HEIGHT;
-                ROTATE = args.ROTATE;
-                CROPX  = args.CROPX;
-                CROPY  = args.CROPY;
-                CROPW  = args.CROPW;
-                CROPH  = args.CROPH;
-            }
-
-            const ctx = thiss._getBitmapCanvas();
-
-            // convert NaN to 0
-            const requestedSizing = [
-                Cast.toNumber(WIDTH),
-                Cast.toNumber(HEIGHT)
-            ];
-
-            function handler(image) {
-                const realX = (Cast.toNumber(X) * thiss._penRes) - (thiss.bitmapCanvas.width / 2);
-                const realY = (Cast.toNumber(Y) * thiss._penRes) + (thiss.bitmapCanvas.height / 2);
-                if (requestedSizing[0] || requestedSizing[1]) {
-                    ctx.rotate((Cast.toNumber(ROTATE) - 90) * (Math.PI / 180));
-
-                    // if one of these is not specified,
-                    // use sizes from the image
-                    if (!requestedSizing[0]) {
-                        requestedSizing[0] = image.width;
-                    }
-                    if (!requestedSizing[1]) {
-                        requestedSizing[1] = image.height;
-                    }
-
-                    const calculatedSizing = [requestedSizing[0] * thiss._penRes, requestedSizing[1] * thiss._penRes];
-                    // check for cropx only since they are all
-                    // required for a proper crop
-                    if (typeof CROPX !== "undefined") {
-                        // we dont need to correct positions
-                        // or sizing since its relative to image
-                        // not the canvas size
-                        const CX = Cast.toNumber(CROPX);
-                        const CY = Cast.toNumber(CROPY);
-                        // convert NaN to 0
-                        const requestedCSizing = [
-                            Cast.toNumber(CROPW),
-                            Cast.toNumber(CROPH)
-                        ];
-
-                        ctx.drawImage(image, CX, CY, requestedCSizing[0], requestedCSizing[1], realX, -realY, calculatedSizing[0], calculatedSizing[1]);
-                    } else {
-                        ctx.drawImage(image, realX, -realY, calculatedSizing[0], calculatedSizing[1]);
-                    }
-                } else {
-                    ctx.drawImage(image, realX, -realY);
-                }
-
-                thiss._drawContextToPen(ctx);
-                if (resolve) resolve();
-            }
-            if (preloadedImage) {
-                return handler(preloadedImage);
-            }
+    async _drawUriImage({URI, X, Y, WIDTH, HEIGHT, ROTATE, CROPX, CROPY, CROPW, CROPH}) {
+        const image = this.preloadedImages[URI] ?? await new Promise((resolve, reject) => {
             const image = new Image();
-            image.onload = () => handler(image);
-            image.onerror = () => resolve(); // ignore loading errors lol!
-            image.src = Cast.toString(URI);
+            image.onload = () => resolve(image);
+            image.onerror = (err) => {
+                console.error('failed to load', URI, err);
+                reject('Image failed to load');
+            };
+            image.src = URI;
         });
-    }
-    _drawUriImage(args) {
-        const thiss = this;
-        const uri = Cast.toString(args.URI);
-        if (this.preloadedImages.hasOwnProperty(uri)) {
-            // we already loaded this image before
-            const func = this._drawUriImagePromiseHandler(thiss);
-            return func(null, args, this.preloadedImages[uri]);
+
+        // protect the user from uninteligable errors that may be thrown but probably never will
+        if (!image.complete) throw new Error('the provided image never loaded')
+        if (image.width <= 0) throw new Error(`the image has an invalid width of ${image.width}`)
+        if (image.height <= 0) throw new Error(`the image has an invalid height of ${image.height}`)
+        
+        const ctx = this._getBitmapCanvas();
+        // an error that really should never happen, but also shouldnt ever get to the user through here
+        if (ctx.canvas.width <= 0 && ctx.canvas.height <= 0) return;
+        
+        ctx.rotate(MathUtil.degToRad(ROTATE - 90));
+
+        // use sizes from the image if none specified
+        const width = WIDTH ?? image.width;
+        const height = HEIGHT ?? image.height;
+        const realX = X - (width / 2);
+        const realY = -Y - (height / 2);
+        const drawArgs = [CROPX, CROPY, CROPW, CROPH, realX, realY, width, height];
+
+        // ensure that all of the drop values exist, just in case :Trollhans
+        if (!(typeof CROPX === "number" && typeof CROPY === "number" && CROPH && CROPH)) {
+            drawArgs.splice(0, 4);
         }
-        return new Promise(resolve => {
-            const func = this._drawUriImagePromiseHandler(thiss);
-            func(resolve, args);
-        })
+
+        ctx.drawImage(image, ...drawArgs);
+        this._drawContextToPen(ctx);
     }
 
+    // todo: should these be merged into their own function? they all have the same code...
     drawUriImage (args) {
-        return this._drawUriImage(args);
+        const preloaded = this.preloadedImages[args.URI];
+        const possiblePromise = this._drawUriImage(args);
+        if (!preloaded) {
+            return possiblePromise;
+        }
     }
     drawUriImageWHR (args) {
-        return this._drawUriImage(args);
+        const preloaded = this.preloadedImages[args.URI];
+        const possiblePromise = this._drawUriImage(args);
+        if (!preloaded) {
+            return possiblePromise;
+        }
     }
     drawUriImageWHCX1Y1X2Y2R (args) {
-        return this._drawUriImage(args);
+        const preloaded = this.preloadedImages[args.URI];
+        const possiblePromise = this._drawUriImage(args);
+        if (!preloaded) {
+            return possiblePromise;
+        }
     }
 
     preloadUriImage ({ URI, NAME }) {
         return new Promise(resolve => {
             const image = new Image();
+            image.crossOrigin = "anonymous";
             image.onload = () => {
                 this.preloadedImages[Cast.toString(NAME)] = image;
                 resolve();
-            }
+            };
             image.onerror = resolve; // ignore loading errors lol!
             image.src = Cast.toString(URI);
-        })
+        });
     }
     unloadUriImage ({ NAME }) {
         const name = Cast.toString(NAME);
@@ -1059,15 +1174,11 @@ class Scratch3PenBlocks {
     drawRect (args) {
         const ctx = this._getBitmapCanvas();
 
-        const hex = Color.decimalToHex(args.COLOR);
+        const rgb = Cast.toRgbColorObject(args.COLOR);
+        const hex = Color.rgbToHex(rgb);
         ctx.fillStyle = hex;
         ctx.strokeStyle = ctx.fillStyle;
-        ctx.fillRect(
-            args.X * this._penRes,
-            -args.Y * this._penRes,
-            args.WIDTH * this._penRes,
-            args.HEIGHT * this._penRes
-        );
+        ctx.fillRect(args.X, -args.Y, args.WIDTH, args.HEIGHT);
 
         this._drawContextToPen(ctx);
     }
@@ -1091,14 +1202,15 @@ class Scratch3PenBlocks {
         const penSkin = this.runtime.renderer._allSkins[penSkinId];
         const width = penSkin._size[0];
         const height = penSkin._size[1];
-        const ctx = this.bitmapCanvas.getContext('2d');
-
         this.bitmapCanvas.width = width;
         this.bitmapCanvas.height = height;
 
+        const ctx = this.bitmapCanvas.getContext('2d');
+
         ctx.clearRect(0, 0, width, height);
-        ctx.save();
         ctx.translate(width / 2, height / 2);
+        // console.log(penSkin.renderQuality, this.bitmapCanvas.width, this.bitmapCanvas.height);
+        ctx.scale(penSkin.renderQuality, penSkin.renderQuality);
         return ctx;
     }
 
@@ -1421,12 +1533,13 @@ class Scratch3PenBlocks {
         const penState = this._getPenState(target);
         const penAttributes = penState.penAttributes;
         const penColor = this._getPenColor(util.target);
-        const points = args.SHAPE.map(pos => ({ x: pos.x * this._penRes, y: pos.y * this._penRes }));
+        const points = args.SHAPE;
         const firstPos = points.at(-1);
 
         const ctx = this._getBitmapCanvas();
 
-        const hex = Color.decimalToHex(args.COLOR);
+        const rgb = Cast.toRgbColorObject(args.COLOR);
+        const hex = Color.rgbToHex(rgb);
         ctx.fillStyle = hex;
         ctx.strokeStyle = penColor;
         ctx.lineWidth = penAttributes.diameter;
@@ -1441,6 +1554,37 @@ class Scratch3PenBlocks {
         ctx.fill();
 
         this._drawContextToPen(ctx);
+    }
+
+    draw4SidedComplexShape (args, util) {
+        this.drawComplexShape(args, util);
+    }
+
+    drawArrayComplexShape (args, util) {
+        const providedData = Cast.toString(args.SHAPE);
+        const providedPoints = parseArray(providedData); // ignores objects
+        // we can save processing by just ignoring empty arrays
+        if (providedPoints.length <= 0) return;
+        // the last point is missing a Y value, Y will be 0 for that point
+        if (providedPoints.length % 2 !== 0) providedPoints.push(0);
+        const points = [];
+        let currentPoint = {};
+        let isXCoord = true;
+        for (const num of providedPoints) {
+            if (isXCoord) {
+                currentPoint.x = Cast.toNumber(num);
+                isXCoord = false;
+                continue;
+            }
+            currentPoint.y = Cast.toNumber(num);
+            points.push(currentPoint);
+            currentPoint = {}; // make a new object so we dont override the others inside the array
+            isXCoord = true;
+        }
+        this.drawComplexShape({
+            ...args,
+            SHAPE: points
+        }, util);
     }
 }
 

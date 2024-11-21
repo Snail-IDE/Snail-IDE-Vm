@@ -295,7 +295,7 @@ class colorBlocks {
                         },
                         percent: {
                             type: ArgumentType.NUMBER,
-                            defaultValue: '50'
+                            defaultValue: '0.5'
                         }
                     },
                     blockType: BlockType.REPORTER
@@ -323,7 +323,7 @@ class colorBlocks {
     }
 
     colorPicker (args) {
-        const color = Cast.toNumber(args.COLOR);
+        const color = Color.hexToDecimal(args.COLOR);
         const argsColor = { color: color };
         switch (Cast.toString(args.OUTPUT).toLowerCase()) {
         case "rgb":
@@ -331,6 +331,7 @@ class colorBlocks {
         case "hsv":
             return this.decimalToHsv(argsColor);
         case "hex":
+            // todo: args.COLOR is already hex now
             return this.decimalToHex(argsColor);
         default:
             return color;

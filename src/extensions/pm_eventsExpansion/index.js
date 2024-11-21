@@ -17,6 +17,11 @@ const blocks = `
         </shadow>
     </value>
 </block>
+<block type="pmEventsExpansion_isBroadcastReceived">
+    <value name="BROADCAST">
+        <shadow type="event_broadcast_menu"></shadow>
+    </value>
+</block>
 %b5>
 ${blockSeparator}
 <!-- %b6 > -->
@@ -30,11 +35,22 @@ ${blockSeparator}
         <shadow type="event_broadcast_menu"></shadow>
     </value>
 </block>
+<block type="pmEventsExpansion_broadcastFunctionArgs">
+    <value name="BROADCAST">
+        <shadow type="event_broadcast_menu"></shadow>
+    </value>
+    <value name="ARGS">
+        <shadow type="text">
+            <field name="TEXT">abc</field>
+        </shadow>
+    </value>
+</block>
 %b8>
 ${blockSeparator}
 %b2>
 %b0>
 %b1>
+${blockSeparator}
 <block type="pmEventsExpansion_broadcastThreadCount">
     <value name="BROADCAST">
         <shadow type="event_broadcast_menu"></shadow>
@@ -99,24 +115,24 @@ class pmEventsExpansion {
                 {
                     opcode: 'everyOtherFrame',
                     text: 'every other frame',
-                    blockType: BlockType.HAT,
+                    blockType: BlockType.EVENT,
                     isEdgeActivated: false
                 },
                 {
                     opcode: 'neverr',
                     text: 'never',
-                    blockType: BlockType.HAT,
+                    blockType: BlockType.EVENT,
                     isEdgeActivated: false
                 },
                 {
                     opcode: 'whenSpriteClicked',
                     text: 'when [SPRITE] clicked',
-                    blockType: BlockType.HAT,
+                    blockType: BlockType.EVENT,
                     isEdgeActivated: false,
                     arguments: {
                         SPRITE: {
                             type: ArgumentType.STRING,
-                            menu: "spriteId"
+                            menu: "spriteName"
                         }
                     }
                 },
@@ -138,7 +154,7 @@ class pmEventsExpansion {
                 {
                     opcode: 'receivedData',
                     text: 'when I receive [BROADCAST] with data',
-                    blockType: BlockType.HAT,
+                    blockType: BlockType.EVENT,
                     isEdgeActivated: false,
                     arguments: {
                         BROADCAST: {
@@ -148,9 +164,22 @@ class pmEventsExpansion {
                     }
                 },
                 {
+                    opcode: 'isBroadcastReceived',
+                    text: 'is message [BROADCAST] received?',
+                    blockType: BlockType.BOOLEAN,
+                    hideFromPalette: true,
+                    arguments: {
+                        BROADCAST: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "your not supposed to see this?"
+                        }
+                    }
+                },
+                {
                     opcode: 'recievedDataReporter',
                     text: 'recieved data',
                     blockType: BlockType.REPORTER,
+                    allowDropAnywhere: true,
                     disableMonitor: true
                 },
                 {
@@ -164,7 +193,7 @@ class pmEventsExpansion {
                         },
                         SPRITE: {
                             type: ArgumentType.STRING,
-                            menu: "spriteId"
+                            menu: "spriteName"
                         }
                     }
                 },
@@ -173,6 +202,7 @@ class pmEventsExpansion {
                     text: 'broadcast [BROADCAST] and wait',
                     blockType: BlockType.REPORTER,
                     disableMonitor: true,
+                    allowDropAnywhere: true,
                     arguments: {
                         BROADCAST: {
                             type: ArgumentType.STRING,
@@ -199,9 +229,26 @@ class pmEventsExpansion {
                     blockType: BlockType.REPORTER,
                     disableMonitor: true
                 },
+                {
+                    opcode: 'broadcastFunctionArgs',
+                    text: 'broadcast [BROADCAST] with data [ARGS] and wait',
+                    blockType: BlockType.REPORTER,
+                    disableMonitor: true,
+                    allowDropAnywhere: true,
+                    arguments: {
+                        BROADCAST: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "your not supposed to see this?"
+                        },
+                        ARGS: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "abc"
+                        }
+                    }
+                },
             ],
             menus: {
-                spriteId: "_spriteId",
+                spriteName: "_spriteName",
                 broadcastMenu: "_broadcastMenu"
             }
         };
@@ -212,6 +259,7 @@ class pmEventsExpansion {
         const emptyMenu = [{ text: '', value: '' }];
         const menu = [];
         for (const target of this.runtime.targets) {
+            if (!target.isOriginal) continue;
             if (target.isStage) {
                 menu.push({
                     text: "stage",
@@ -227,10 +275,31 @@ class pmEventsExpansion {
         if (menu.length <= 0) return emptyMenu;
         return menu;
     }
+    _spriteName() {
+        const emptyMenu = [{ text: '', value: '' }];
+        const menu = [];
+        for (const target of this.runtime.targets) {
+            if (!target.isOriginal) continue;
+            if (target.isStage) {
+                menu.push({
+                    text: "stage",
+                    value: "_stage_"
+                });
+                continue;
+            }
+            menu.push({
+                text: target.sprite.name,
+                value: target.sprite.name
+            });
+        }
+        if (menu.length <= 0) return emptyMenu;
+        return menu;
+    }
     _broadcastMenu() {
         const emptyMenu = [{ text: '', value: '' }];
         const menu = [];
         for (const target of this.runtime.targets) {
+            if (!target.isOriginal) continue;
             if (target.isStage) {
                 menu.push({
                     text: "stage",
@@ -251,6 +320,9 @@ class pmEventsExpansion {
     sendWithData(args, util) {
         const broadcast = Cast.toString(args.BROADCAST);
         const data = Cast.toString(args.DATA);
+        const broadcastVar = util.runtime.getTargetForStage().lookupBroadcastMsg("", broadcast);
+        if (broadcastVar) broadcastVar.isSent = true;
+        
         const threads = util.startHats("event_whenbroadcastreceived", {
             BROADCAST_OPTION: broadcast
         });
@@ -260,14 +332,22 @@ class pmEventsExpansion {
     }
     broadcastToSprite(args, util) {
         const broadcast = Cast.toString(args.BROADCAST);
+        const broadcastVar = util.runtime.getTargetForStage().lookupBroadcastMsg("", broadcast);
+        if (broadcastVar) broadcastVar.isSent = true;
+
         const sprite = Cast.toString(args.SPRITE);
-        const target = this.runtime.getTargetById(sprite);
+        const target = sprite === "_stage_" ?
+            this.runtime.getTargetForStage()
+            : this.runtime.getSpriteTargetByName(sprite);
         util.startHats("event_whenbroadcastreceived", {
             BROADCAST_OPTION: broadcast
         }, target);
     }
     broadcastThreadCount(args, util) {
         const broadcast = Cast.toString(args.BROADCAST);
+        const broadcastVar = util.runtime.getTargetForStage().lookupBroadcastMsg("", broadcast);
+        if (broadcastVar) broadcastVar.isSent = true;
+
         const threads = util.startHats("event_whenbroadcastreceived", {
             BROADCAST_OPTION: broadcast
         });
@@ -278,6 +358,17 @@ class pmEventsExpansion {
     }
     returnFromBroadcastFunc(args, util) {
         util.thread.__evex_returnDataa = args.VALUE;
+    }
+    isBroadcastReceived(args, util) {
+        const broadcast = Cast.toString(args.BROADCAST);
+        const broadcastVar = util.runtime.getTargetForStage().lookupBroadcastMsg("", broadcast);
+        return Cast.toBoolean(broadcastVar && broadcastVar.isSent);
+    }
+    broadcastFunction() {
+        return; // compiler block
+    }
+    broadcastFunctionArgs() {
+        return; // compiler block
     }
 }
 

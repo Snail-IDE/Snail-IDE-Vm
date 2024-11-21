@@ -1,6 +1,8 @@
 const BlockType = require('../../extension-support/block-type');
 const ArgumentType = require('../../extension-support/argument-type');
+const formatMessage = require('format-message');
 const Cast = require('../../util/cast');
+const Color = require('../../util/color');
 
 const blockSeparator = '<sep gap="36"/>'; // At default scale, about 28px
 
@@ -37,6 +39,21 @@ const blocks = `
     </value>
 </block>
 ${blockSeparator}
+%b16>
+%b17>
+%b20>
+%b22>
+<block type="pmSensingExpansion_amountOfTimeKeyHasBeenHeld">
+    <value name="KEY">
+        <shadow type="sensing_keyoptions" />
+    </value>
+</block>
+%b18>
+%b19>
+%b23>
+%b24>
+${blockSeparator}
+%b14>
 <block type="sensing_getspritewithattrib">
     <value name="var">
         <shadow type="text">
@@ -54,6 +71,7 @@ ${blockSeparator}
 %b6>
 %b9>
 %b11>
+%b15>
 %b12>
 %b13>
 ${blockSeparator}
@@ -85,8 +103,17 @@ class pmSensingExpansion {
          * @type {runtime}
          */
         this.runtime = runtime;
+
         this.canVibrate = true;
+
         this.lastUpdate = Date.now();
+
+        this.canGetLoudness = false;
+        this.loudnessArray = [0];
+
+        this.scrollDistance = 0;
+
+        this.lastValues = {};
     }
 
     orderCategoryBlocks(extensionBlocks) {
@@ -161,7 +188,7 @@ class pmSensingExpansion {
                         },
                         URL: {
                             type: ArgumentType.STRING,
-                            defaultValue: "https://home.penguinmod.site:3000/some/random/page?param=10#20"
+                            defaultValue: "https://home.penguinmod.com:3000/some/random/page?param=10#20"
                         }
                     }
                 },
@@ -199,7 +226,7 @@ class pmSensingExpansion {
                         },
                         URL: {
                             type: ArgumentType.STRING,
-                            defaultValue: "https://penguinmod.site/?param=10"
+                            defaultValue: "https://penguinmod.com/?param=10"
                         }
                     }
                 },
@@ -233,8 +260,141 @@ class pmSensingExpansion {
                     blockType: BlockType.REPORTER,
                     disableMonitor: false
                 },
+                {
+                    opcode: 'pickColor',
+                    text: 'grab color at x: [X] y: [Y]',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        X: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        },
+                        Y: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        }
+                    }
+                },
+                {
+                    opcode: 'maxSpriteLayers',
+                    text: 'max sprite layers',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'averageLoudness',
+                    text: 'average loudness',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'scrollingDistance',
+                    text: 'scrolling distance',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'setScrollingDistance',
+                    text: 'set scrolling distance to [AMOUNT]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        AMOUNT: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        }
+                    }
+                },
+                {
+                    opcode: 'changeScrollingDistanceBy',
+                    text: 'change scrolling distance by [AMOUNT]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        AMOUNT: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 100
+                        }
+                    }
+                },
+                {
+                    opcode: 'currentKeyPressed',
+                    text: 'current key pressed',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'amountOfTimeKeyHasBeenHeld',
+                    text: 'seconds since holding [KEY]',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        KEY: {
+                            // this is replaced later
+                            type: ArgumentType.STRING,
+                            defaultValue: 'a'
+                        }
+                    }
+                },
+                {
+                    opcode: 'getLastKeyPressed',
+                    text: formatMessage({
+                        id: 'tw.blocks.lastKeyPressed',
+                        default: 'last key pressed',
+                        description: 'Block that returns the last key that was pressed'
+                    }),
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'getButtonIsDown',
+                    text: formatMessage({
+                        id: 'tw.blocks.buttonIsDown',
+                        default: '[MOUSE_BUTTON] mouse button down?',
+                        description: 'Block that returns whether a specific mouse button is down'
+                    }),
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        MOUSE_BUTTON: {
+                            type: ArgumentType.NUMBER,
+                            menu: 'mouseButton',
+                            defaultValue: '0'
+                        }
+                    }
+                },
+                {
+                    opcode: 'changed',
+                    blockType: BlockType.BOOLEAN,
+                    text: '[ONE] changed?',
+                    arguments: {
+                        ONE: {
+                          type: null,
+                        },
+                    },
+                }
             ],
             menus: {
+                mouseButton: {
+                    items: [
+                        {
+                            text: formatMessage({
+                                id: 'tw.blocks.mouseButton.primary',
+                                default: '(0) primary',
+                                description: 'Dropdown item to select primary (usually left) mouse button'
+                            }),
+                            value: '0'
+                        },
+                        {
+                            text: formatMessage({
+                                id: 'tw.blocks.mouseButton.middle',
+                                default: '(1) middle',
+                                description: 'Dropdown item to select middle mouse button'
+                            }),
+                            value: '1'
+                        },
+                        {
+                            text: formatMessage({
+                                id: 'tw.blocks.mouseButton.secondary',
+                                default: '(2) secondary',
+                                description: 'Dropdown item to select secondary (usually right) mouse button'
+                            }),
+                            value: '2'
+                        }
+                    ],
+                    acceptReporters: true
+                },
                 urlSections: {
                     acceptReporters: true,
                     items: [
@@ -252,6 +412,36 @@ class pmSensingExpansion {
                 }
             }
         };
+    }
+
+    getLastKeyPressed (_, util) {
+        return util.ioQuery('keyboard', 'getLastKeyPressed');
+    }
+
+    getButtonIsDown (args, util) {
+        const button = Cast.toNumber(args.MOUSE_BUTTON);
+        return util.ioQuery('mouse', 'getButtonIsDown', [button]);
+    }
+
+    changed(args, util) {
+      const id = util.thread.peekStack()
+      if (!this.lastValues[id])
+        this.lastValues[id] = Cast.toString(args.ONE);
+      if (Cast.toString(args.ONE) !== this.lastValues[id]) {
+        this.lastValues[id] = Cast.toString(args.ONE);
+        return true;
+      }
+      return false;
+    }
+
+    pickColor(args) {
+        const renderer = this.runtime.renderer;
+        const scratchX = Cast.toNumber(args.X);
+        const scratchY = Cast.toNumber(args.Y);
+        const clientX = Math.round((((this.runtime.stageWidth / 2) + scratchX) / this.runtime.stageWidth) * renderer._gl.canvas.clientWidth);
+        const clientY = Math.round((((this.runtime.stageHeight / 2) - scratchY) / this.runtime.stageHeight) * renderer._gl.canvas.clientHeight);
+        const colorInfo = renderer.extractColor(clientX, clientY, 20);
+        return Color.rgbToHex(colorInfo.color);
     }
 
     // util
@@ -326,6 +516,65 @@ class pmSensingExpansion {
         } else {
             return true;
         }
+    }
+
+    maxSpriteLayers() {
+        return this.runtime.renderer._drawList.length - 1;
+    }
+    averageLoudness() {
+        if (!this.canGetLoudness) {
+            // set interval here because why create an interval
+            // on extension register if we never use the block
+            console.log('created average loudness loop');
+            setInterval(() => {
+                if (!this.canGetLoudness) return;
+                const loudness = this.runtime.audioEngine.getLoudness();
+                if (typeof loudness !== 'number') return;
+                if (this.loudnessArray.length > 20) {
+                    this.loudnessArray.shift();
+                }
+                if (loudness < 0) {
+                    this.loudnessArray.push(0);
+                    return;
+                }
+                this.loudnessArray.push(loudness);
+            }, 50);
+        }
+        // get average
+        this.canGetLoudness = true;
+        let addedTogether = 0;
+        let max = this.loudnessArray.length;
+        for (const loudness of this.loudnessArray) {
+            addedTogether += loudness;
+        }
+        return addedTogether / max;
+    }
+
+    scrollingDistance() {
+        return this.scrollDistance;
+    }
+    setScrollingDistance(args) {
+        const amount = Cast.toNumber(args.AMOUNT);
+        this.scrollDistance = amount;
+    }
+    changeScrollingDistanceBy(args) {
+        const amount = Cast.toNumber(args.AMOUNT);
+        this.scrollDistance += amount;
+    }
+
+    currentKeyPressed(_, util) {
+        const keys = util.ioQuery('keyboard', 'getAllKeysPressed');
+        const key = keys[keys.length - 1];
+        if (!key) return '';
+        return Cast.toString(key).toLowerCase();
+    }
+    amountOfTimeKeyHasBeenHeld(args, util) {
+        const key = Cast.toString(args.KEY);
+        const keyTimestamp = util.ioQuery('keyboard', 'getKeyTimestamp', [key]);
+        if (keyTimestamp === 0) return 0;
+        const currentTime = Date.now();
+        const timestamp = currentTime - keyTimestamp;
+        return timestamp / 1000;
     }
 
     vibrateDevice() {
@@ -425,7 +674,8 @@ class pmSensingExpansion {
     setUsername(args) {
         const username = Cast.toString(args.NAME);
         vm.postIOData('userData', {
-            username: username
+            username: username,
+            loggedIn: false,
         });
     }
 

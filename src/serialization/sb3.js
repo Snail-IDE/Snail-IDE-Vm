@@ -83,6 +83,8 @@ const BROADCAST_PRIMITIVE = 11;
 const VAR_PRIMITIVE = 12;
 // data_listcontents
 const LIST_PRIMITIVE = 13;
+// any single-fielded item not covered above
+const LONE_FIELD = 14;
 
 // Map block opcodes to the above primitives and the name of the field we can use
 // to find the value of the field
@@ -100,7 +102,7 @@ const primitiveOpcodeInfoMap = {
 };
 
 // the list of blocks and there replacements for jwUnite
-const replacments = {
+const uniteReplacments = {
     'jwUnite_always': 'event_always',
     'jwUnite_whenanything': 'event_whenanything',
     'jwUnite_getspritewithattrib': 'sensing_getspritewithattrib',
@@ -128,7 +130,7 @@ const replacments = {
 // extensions to be patched by the extension patcher
 const ExtensionPatches = {
     "griffpatch": {id: 'griffpatch', url: 'https://extensions.turbowarp.org/box2d.js'},
-    "cloudlink": {id: 'cloudlink', url: 'https://extensions.turbowarp.org/cloudlink.js'},
+    // "cloudlink": {id: 'cloudlink', url: 'https://extensions.turbowarp.org/cloudlink.js'},
     "jwUnite": (extensions, object, runtime) => {
         extensions.extensionIDs.delete("jwUnite");
         let blocks = object.blocks;
@@ -139,8 +141,8 @@ const ExtensionPatches = {
             block = blocks[blockIDs[idx]];
             if (typeof block !== 'object' || Array.isArray(block)) continue;
             // handle all 1:1 blocks
-            if (replacments[block.opcode]) {
-                block.opcode = replacments[block.opcode];
+            if (uniteReplacments[block.opcode]) {
+                block.opcode = uniteReplacments[block.opcode];
                 if (block.opcode === 'sensing_regextest' || block.opcode === 'operator_regexmatch') {
                     block.inputs.regrule = [
                         INPUT_SAME_BLOCK_SHADOW, 
@@ -166,7 +168,34 @@ const ExtensionPatches = {
             blocks[blockIDs[idx]] = block;
         }
         object.blocks = blocks;
-    }
+    },
+    // eslint-disable-next-line no-unused-vars
+    // 'text': (extensions, object, runtime) => {
+    //     const blocks = object.blocks;
+    //     const patcher = extensions.patcher;
+    //     if (!patcher.loaded.includes('text')) {
+    //         runtime.extensionManager.loadExtensionURL('text');
+    //         patcher.loaded.push('text');
+    //     }
+    //     for (const id in blocks) {
+    //         const block = blocks[id];
+    //         const oldFont = block.fields?.FONT ?? block.fields?.font;
+    //         if (!oldFont) continue;
+    //         block.inputs.FONT = [
+    //             INPUT_SAME_BLOCK_SHADOW,
+    //             [
+    //                 LONE_FIELD,
+    //                 'text_menu_FONT',
+    //                 'FONT',
+    //                 {
+    //                     name: 'FONT',
+    //                     value: oldFont[0],
+    //                     id: oldFont[1]
+    //                 }
+    //             ]
+    //         ];
+    //     }
+    // }
 };
 
 /**
@@ -178,6 +207,17 @@ const ExtensionPatches = {
 const serializePrimitiveBlock = function (block) {
     // Returns an array represeting a primitive block or null if not one of
     // the primitive types above
+    // if (Object.keys(block.inputs).length === 0 && Object.keys(block.fields).length === 1) {
+    //     const opcode = block.opcode;
+    //     const fieldName = Object.keys(block.fields)[0];
+    //     const fieldValue = block.fields[fieldName];
+    //     const primitiveDesc = [LONE_FIELD, opcode, fieldName, fieldValue];
+    //     if (block.topLevel) {
+    //         primitiveDesc.push(block.x ? Math.round(block.x) : 0);
+    //         primitiveDesc.push(block.y ? Math.round(block.y) : 0);
+    //     }
+    //     return primitiveDesc;
+    // }
     if (hasOwnProperty.call(primitiveOpcodeInfoMap, block.opcode)) {
         const primitiveInfo = primitiveOpcodeInfoMap[block.opcode];
         const primitiveConstant = primitiveInfo[0];
@@ -249,6 +289,9 @@ const serializeFields = function (fields) {
         obj[fieldName] = [fields[fieldName].value];
         if (fields[fieldName].hasOwnProperty('id')) {
             obj[fieldName].push(fields[fieldName].id);
+        }
+        if (fields[fieldName].hasOwnProperty('variableType')) {
+            obj[fieldName].push(fields[fieldName].variableType);
         }
     }
     return obj;
@@ -368,6 +411,47 @@ const getExtensionIdForOpcode = function (opcode) {
 };
 
 /**
+ * @param {Runtime} runtime
+ * @returns {Array<string>} runtime -> extensionIDs
+ */
+const getExtensionIDs = runtime => runtime._blockInfo
+    .map(ext => ext.id)
+    .filter(ext => runtime.extensionManager.isExtensionLoaded(ext));
+
+/**
+ * @param {Set<string>|string[]} extensionIDs Project extension IDs
+ * @param {Runtime} runtime
+ * @returns {Record<string, string>|null} extension ID -> URL map, or null if no custom extensions.
+ */
+const getExtensionURLsToSave = (extensionIDs, runtime) => {
+    // Extension manager only exists when runtime is wrapped by VirtualMachine
+    if (!runtime.extensionManager) {
+        return null;
+    }
+
+    // We'll save the extensions in the format:
+    // {
+    //   "extensionid": "https://...",
+    //   "otherid": "https://..."
+    // }
+    // Which lets the VM know which URLs correspond to which IDs, which is useful when the project
+    // is being loaded. For example, if the extension is eventually converted to a builtin extension
+    // or if it is already loaded, then it doesn't need to fetch the script again.
+    const extensionURLs = runtime.extensionManager.getExtensionURLs();
+    const toSave = {};
+    for (const extension of extensionIDs) {
+        const url = extensionURLs[extension];
+        if (typeof url === 'string') {
+            toSave[extension] = url;
+        }
+    }
+    if (Object.keys(toSave).length === 0) {
+        return null;
+    }
+    return toSave;
+};
+
+/**
  * Serialize the given blocks object (representing all the blocks for the target
  * currently being serialized.)
  * @param {object} blocks The blocks to be serialized
@@ -377,14 +461,9 @@ const getExtensionIdForOpcode = function (opcode) {
  */
 const serializeBlocks = function (blocks) {
     const obj = Object.create(null);
-    const extensionIDs = new Set();
     for (const blockID in blocks) {
         if (!blocks.hasOwnProperty(blockID)) continue;
         obj[blockID] = serializeBlock(blocks[blockID], blocks);
-        const extensionID = getExtensionIdForOpcode(blocks[blockID].opcode);
-        if (extensionID) {
-            extensionIDs.add(extensionID);
-        }
     }
     // once we have completed a first pass, do a second pass on block inputs
     for (const blockID in obj) {
@@ -413,7 +492,53 @@ const serializeBlocks = function (blocks) {
             delete obj[blockID];
         }
     }
-    return [obj, Array.from(extensionIDs)];
+    return obj;
+};
+
+/**
+ * @param {unknown} blocks Output of serializeStandaloneBlocks
+ * @returns {{blocks: Block[], extensionURLs: Map<string, string>}}
+ */
+const deserializeStandaloneBlocks = blocks => {
+    // deep clone to ensure it's safe to modify later
+    blocks = JSON.parse(JSON.stringify(blocks));
+
+    if (blocks.extensionURLs) {
+        const extensionURLs = new Map();
+        for (const [id, url] of Object.entries(blocks.extensionURLs)) {
+            extensionURLs.set(id, url);
+        }
+        return {
+            blocks: blocks.blocks,
+            extensionURLs
+        };
+    }
+
+    // Vanilla Scratch format is just a list of block objects
+    return {
+        blocks,
+        extensionURLs: new Map()
+    };
+};
+
+/**
+ * @param {Block[]} blocks List of block objects.
+ * @param {Runtime} runtime Runtime
+ * @returns {object} Something that can be understood by deserializeStandaloneBlocks
+ */
+const serializeStandaloneBlocks = (blocks, runtime) => {
+    const extensionIDs = new Set(getExtensionIDs(runtime));
+    const extensionURLs = getExtensionURLsToSave(extensionIDs, runtime);
+    if (extensionURLs) {
+        return {
+            blocks,
+            // same format as project.json
+            extensionURLs: extensionURLs
+        };
+    }
+    // Vanilla Scratch always just uses the block array as-is. To reduce compatibility concerns
+    // we too will use that when possible.
+    return blocks;
 };
 
 /**
@@ -479,10 +604,14 @@ const isVariableValueSafeForJSON = value => (
     typeof value === 'string' ||
     typeof value === 'boolean'
 );
-const makeSafeForJSON = value => {
+const makeSafeForJSON = (runtime, value) => {
     if (Array.isArray(value)) {
         let copy = null;
         for (let i = 0; i < value.length; i++) {
+            if (value[i].customId) {
+                const {serialize} = runtime.serializers[value[i].customId];
+                value[i] = serialize(value[i]);
+            }
             if (!isVariableValueSafeForJSON(value[i])) {
                 if (!copy) {
                     // Only copy the list when needed
@@ -495,6 +624,14 @@ const makeSafeForJSON = value => {
             return copy;
         }
         return value;
+    }
+    if (value.customId) {
+        const {serialize} = runtime.serializers[value.customId];
+        return {
+            customType: true,
+            typeId: value.customId,
+            serialized: serialize(value)
+        };
     }
     if (isVariableValueSafeForJSON(value)) {
         return value;
@@ -509,13 +646,13 @@ const makeSafeForJSON = value => {
  * separated by type to compress the representation of each given variable and
  * reduce duplicate information.
  */
-const serializeVariables = function (variables) {
-    const obj = Object.create(null);
+const serializeVariables = function (obj, runtime, variables) {
     // separate out variables into types at the top level so we don't have
     // keep track of a type for each
     obj.variables = Object.create(null);
     obj.lists = Object.create(null);
     obj.broadcasts = Object.create(null);
+    obj.customVars = [];
     for (const varId in variables) {
         const v = variables[varId];
         if (v.type === Variable.BROADCAST_MESSAGE_TYPE) {
@@ -523,16 +660,19 @@ const serializeVariables = function (variables) {
             continue;
         }
         if (v.type === Variable.LIST_TYPE) {
-            obj.lists[varId] = [v.name, makeSafeForJSON(v.value)];
+            obj.lists[varId] = [v.name, makeSafeForJSON(runtime, v.value)];
             continue;
         }
-
-        // otherwise should be a scalar type
-        obj.variables[varId] = [v.name, makeSafeForJSON(v.value)];
-        // only scalar vars have the potential to be cloud vars
-        if (v.isCloud) obj.variables[varId].push(true);
+        if (v.type === Variable.SCALAR_TYPE) {
+            obj.variables[varId] = [v.name, makeSafeForJSON(runtime, v.value)];
+            if (v.isCloud) obj.variables[varId].push(true);
+            continue;
+        }
+        // else custom variable type
+        const varInfo = v.serialize();
+        varInfo.unshift(v.type);
+        obj.customVars.push(varInfo);
     }
-    return obj;
 };
 
 const serializeComments = function (comments) {
@@ -562,16 +702,12 @@ const serializeComments = function (comments) {
  * @param {Set} extensions A set of extensions to add extension IDs to
  * @return {object} A serialized representation of the given target.
  */
-const serializeTarget = function (target, extensions) {
+const serializeTarget = function (runtime, target) {
     const obj = Object.create(null);
-    let targetExtensions = [];
     obj.isStage = target.isStage;
     obj.name = obj.isStage ? 'Stage' : target.name;
-    const vars = serializeVariables(target.variables);
-    obj.variables = vars.variables;
-    obj.lists = vars.lists;
-    obj.broadcasts = vars.broadcasts;
-    [obj.blocks, targetExtensions] = serializeBlocks(target.blocks);
+    serializeVariables(obj, runtime, target.variables);
+    obj.blocks = serializeBlocks(target.blocks);
     obj.comments = serializeComments(target.comments);
 
     // TODO remove this check/patch when (#1901) is fixed
@@ -583,6 +719,7 @@ const serializeTarget = function (target, extensions) {
     obj.currentCostume = target.currentCostume;
     obj.costumes = target.costumes.map(serializeCostume);
     obj.sounds = target.sounds.map(serializeSound);
+    obj.id = target.id;
     if (target.hasOwnProperty('volume')) obj.volume = target.volume;
     if (target.hasOwnProperty('layerOrder')) obj.layerOrder = target.layerOrder;
     if (obj.isStage) { // Only the stage should have these properties
@@ -600,10 +737,6 @@ const serializeTarget = function (target, extensions) {
         obj.rotationStyle = target.rotationStyle;
     }
 
-    // Add found extensions to the extensions object
-    targetExtensions.forEach(extensionId => {
-        extensions.add(extensionId);
-    });
     return obj;
 };
 
@@ -656,7 +789,7 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
     // Fetch targets
     const obj = Object.create(null);
     // Create extension set to hold extension ids found while serializing targets
-    const extensions = new Set();
+    const extensions = getExtensionIDs(runtime);
 
     const originalTargetsToSerialize = targetId ?
         [runtime.getTargetById(targetId)] :
@@ -674,46 +807,56 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
         });
     }
 
-    const serializedTargets = flattenedOriginalTargets.map(t => serializeTarget(t, extensions));
+    const serializedTargets = flattenedOriginalTargets.map(t => serializeTarget(runtime, t, extensions));
+    const fonts = runtime.fontManager.serializeJSON();
 
     if (targetId) {
-        return serializedTargets[0];
+        const target = serializedTargets[0];
+        const extensionURLs = getExtensionURLsToSave(extensions, runtime);
+        target.extensions = extensions;
+        if (extensionURLs) {
+            target.extensionURLs = extensionURLs;
+        }
+
+        // add extension datas
+        target.extensionData = {};
+        for (const extension of extensions) {
+            if (`ext_${extension}` in runtime) {
+                if (typeof runtime[`ext_${extension}`].serialize === 'function') {
+                    target.extensionData[extension] = runtime[`ext_${extension}`].serialize();
+                }
+            }
+        }
+
+        if (fonts) {
+            target.customFonts = fonts;
+        }
+        return target;
     }
 
     obj.targets = serializedTargets;
 
     obj.monitors = serializeMonitors(runtime.getMonitorState(), runtime);
 
-    // Assemble extension list
-    obj.extensions = Array.from(extensions);
-
-    // Save list of URLs to load the current extensions
-    // Extension manager only exists when runtime is wrapped by VirtualMachine
-    if (runtime.extensionManager) {
-        // We'll save the extensions in the format:
-        // {
-        //   "extension_id": "https://...",
-        //   "other_id": "https://..."
-        // }
-        // Which lets the VM know which URLs correspond to which IDs, which is useful when the project
-        // is being loaded. For example, if the extension is eventually converted to a builtin extension
-        // or if it is already loaded, then it doesn't need to fetch the script again.
-        const extensionURLs = runtime.extensionManager.getExtensionURLs();
-        const urlsToSave = {};
-        obj.extensionData = {};
-        for (const extension of extensions) {
-            const url = extensionURLs[extension];
-            if (typeof url === 'string') {
-                urlsToSave[extension] = url;
-            }
+    // add extension datas
+    obj.extensionData = {};
+    for (const extension of extensions) {
+        if (`ext_${extension}` in runtime) {
             if (typeof runtime[`ext_${extension}`].serialize === 'function') {
                 obj.extensionData[extension] = runtime[`ext_${extension}`].serialize();
             }
         }
-        // Only save this object if any URLs would actually be saved.
-        if (Object.keys(urlsToSave).length !== 0) {
-            obj.extensionURLs = urlsToSave;
-        }
+    }
+
+    // Assemble extension list
+    obj.extensions = extensions;
+    const extensionURLs = getExtensionURLsToSave(extensions, runtime);
+    if (extensionURLs) {
+        obj.extensionURLs = extensionURLs;
+    }
+
+    if (fonts) {
+        obj.customFonts = fonts;
     }
 
     // Assemble metadata
@@ -736,6 +879,13 @@ const serialize = function (runtime, targetId, {allowOptimization = true} = {}) 
     meta.agent = '';
     // TW: Never include full user agent to slightly improve user privacy
     // if (typeof navigator !== 'undefined') meta.agent = navigator.userAgent;
+    
+    // Attach platform information so TurboWarp and other mods can detect where the file comes from
+    const platform = Object.create(null);
+    platform.name = "PenguinMod";
+    platform.url = "https://penguinmod.com/";
+    platform.version = "stable";
+    meta.platform = platform;
 
     // Assemble payload and return
     obj.meta = meta;
@@ -892,6 +1042,18 @@ const deserializeInputDesc = function (inputDescOrId, parentId, isShadow, blocks
         }
         break;
     }
+    case LONE_FIELD: {
+        primitiveObj.opcode = inputDescOrId[1];
+        primitiveObj.fields = {
+            [inputDescOrId[2]]: inputDescOrId[3]
+        };
+        if (inputDescOrId.length > 4) {
+            primitiveObj.topLevel = true;
+            primitiveObj.x = inputDescOrId[4];
+            primitiveObj.y = inputDescOrId[5];
+        }
+        break;
+    }
     default: {
         log.error(`Found unknown primitive type during deserialization: ${JSON.stringify(inputDescOrId)}`);
         return null;
@@ -960,6 +1122,10 @@ const deserializeFields = function (fields) {
         if (fieldDescArr.length > 1) {
             obj[fieldName].id = fieldDescArr[1];
         }
+        if (fieldDescArr.length > 2) {
+            obj[fieldName].variableType = fieldDescArr[2];
+        }
+        // "old" compat code :bleh:
         if (fieldName === 'BROADCAST_OPTION') {
             obj[fieldName].variableType = Variable.BROADCAST_MESSAGE_TYPE;
         } else if (fieldName === 'VARIABLE') {
@@ -1122,9 +1288,6 @@ const parseScratchObject = function (object, runtime, extensions, zip, assets) {
             if (typeof blockJSON !== 'object' || Array.isArray(blockJSON)) continue;
             const extensionID = getExtensionIdForOpcode(blockJSON.opcode);
             const isPatched = extensions.patcher.patchExists(extensionID);
-            if (extensionID && !isPatched) {
-                extensions.extensionIDs.add(extensionID);
-            }
             if (isPatched) {
                 extensions.patcher.runExtensionPatch(extensionID, extensions, object);
             }
@@ -1207,6 +1370,13 @@ const parseScratchObject = function (object, runtime, extensions, zip, assets) {
             target.variables[newBroadcast.id] = newBroadcast;
         }
     }
+    if (object.hasOwnProperty('customVars')) {
+        for (const info of object.customVars) {
+            // im lay z so customVars is just a list of arg lists to be passed into the variable creator
+            const newVar = runtime.newVariableInstance(...info);
+            target.variables[newVar.id] = newVar;
+        }
+    }
     if (object.hasOwnProperty('comments')) {
         for (const commentId in object.comments) {
             const comment = object.comments[commentId];
@@ -1257,6 +1427,10 @@ const parseScratchObject = function (object, runtime, extensions, zip, assets) {
     }
     if (object.hasOwnProperty('draggable')) {
         target.draggable = object.draggable;
+    }
+    const existingTargetIds = runtime.targets.map(target => target.id);
+    if (object.hasOwnProperty('id') && !existingTargetIds.includes(object.id)) {
+        target.id = object.id;
     }
     Promise.all(costumePromises).then(costumes => {
         sprite.costumes = costumes;
@@ -1374,12 +1548,6 @@ const deserializeMonitor = function (monitorData, runtime, targets, extensions) 
         }
 
         runtime.monitorBlocks.createBlock(monitorBlock);
-
-        // If the block is from an extension, record it.
-        const extensionID = getExtensionIdForOpcode(monitorBlock.opcode);
-        if (extensionID) {
-            extensions.extensionIDs.add(extensionID);
-        }
     }
 
     runtime.requestAddMonitor(MonitorRecord(monitorData));
@@ -1426,7 +1594,7 @@ const deserialize = function (json, runtime, zip, isSingleSprite) {
     const extensionPatcher = new OldExtensions(runtime);
     extensionPatcher.registerExtensions(ExtensionPatches);
     const extensions = {
-        extensionIDs: new Set(),
+        extensionIDs: new Set(json.extensions),
         extensionURLs: new Map(),
         extensionData: {},
         patcher: extensionPatcher
@@ -1450,6 +1618,14 @@ const deserialize = function (json, runtime, zip, isSingleSprite) {
         extensions.extensionData = json.extensionData;
     }
 
+    // Extract any custom fonts before loading costumes.
+    let fontPromise;
+    if (json.customFonts) {
+        fontPromise = runtime.fontManager.deserialize(json.customFonts, zip, isSingleSprite);
+    } else {
+        fontPromise = Promise.resolve();
+    }
+
     // First keep track of the current target order in the json,
     // then sort by the layer order property before parsing the targets
     // so that their corresponding render drawables can be created in
@@ -1460,10 +1636,7 @@ const deserialize = function (json, runtime, zip, isSingleSprite) {
 
     const monitorObjects = json.monitors || [];
 
-    return Promise.resolve(
-        targetObjects.map(target =>
-            parseScratchAssets(target, runtime, zip))
-    )
+    return fontPromise.then(() => targetObjects.map(target => parseScratchAssets(target, runtime, zip)))
         // Force this promise to wait for the next loop in the js tick. Let
         // storage have some time to send off asset requests.
         .then(assets => Promise.resolve(assets))
@@ -1501,5 +1674,7 @@ module.exports = {
     deserialize: deserialize,
     deserializeBlocks: deserializeBlocks,
     serializeBlocks: serializeBlocks,
+    deserializeStandaloneBlocks: deserializeStandaloneBlocks,
+    serializeStandaloneBlocks: serializeStandaloneBlocks,
     getExtensionIdForOpcode: getExtensionIdForOpcode
 };
