@@ -5,19 +5,13 @@ const Cast = require('../../util/cast');
 const Legacy = require('./legacy');
 
 const Icon = require("./icon.svg");
-/**
- * yo we got our own bapi now 😎
- */
 
 /**
- * Class for Scratch Authentication blocks
  * Class for Scratch Authentication blocks
  * @constructor
  */
 let currentPrivateCode = '';
-let currentPrivateCode = '';
 class JgScratchAuthenticateBlocks {
-    constructor(runtime) {
     constructor(runtime) {
         /**
          * The runtime instantiating this block package.
@@ -34,26 +28,14 @@ class JgScratchAuthenticateBlocks {
         this.loginInfo = {};
 
         // legacy
-
-        this.promptStatus = {
-            inProgress: false,
-            blocked: false,
-            completed: false,
-            userClosed: false,
-        };
-        this.loginInfo = {};
-
-        // legacy
         this.keepAllowingAuthBlock = true;
         this.disableConfirmationShown = false;
     }
 
 
-
     /**
      * dummy function for reseting user provided permisions when a save is loaded
      */
-    deserialize() {
     deserialize() {
         this.disableConfirmationShown = false;
     }
@@ -61,7 +43,6 @@ class JgScratchAuthenticateBlocks {
     /**
      * @returns {object} metadata for this extension and its blocks.
      */
-    getInfo() {
     getInfo() {
         return {
             id: 'jgScratchAuthenticate',
@@ -71,12 +52,7 @@ class JgScratchAuthenticateBlocks {
             blockIconURI: Icon,
             // TODO: docs doesnt exist, make some docs
             // docsURI: 'https://docs.penguinmod.com/extensions/scratch-auth',
-            color2: '#ff8C00',
-            blockIconURI: Icon,
-            // TODO: docs doesnt exist, make some docs
-            // docsURI: 'https://docs.penguinmod.com/extensions/scratch-auth',
             blocks: [
-                // LEGACY BLOCK
                 // LEGACY BLOCK
                 {
                     opcode: 'authenticate',
@@ -87,9 +63,8 @@ class JgScratchAuthenticateBlocks {
                     }),
                     disableMonitor: true,
                     hideFromPalette: true,
-                    hideFromPalette: true,
                     arguments: {
-                        NAME: { type: ArgumentType.STRING, defaultValue: "PenguinMod" }
+                        NAME: { type: ArgumentType.STRING, defaultValue: "Snail IDE" }
                     },
                     blockType: BlockType.REPORTER
                 },
@@ -207,8 +182,8 @@ class JgScratchAuthenticateBlocks {
         nameSplit.pop();
         const projectName = Cast.toString(nameSplit.join(" - "));
         return [
-            projectName === 'PenguinMod' ? 'Project' : projectName,
-            'PenguinMod',
+            projectName === 'Snail IDE' ? 'Project' : projectName,
+            'Snail IDE',
             'Game',
         ];
     }
@@ -238,7 +213,7 @@ class JgScratchAuthenticateBlocks {
 
         const loginLocation = Cast.toString(args.NAME);
         const sanitizedName = encodeURIComponent(loginLocation.substring(0, 256).replace(/[^a-zA-Z0-9 _\-\.\[\]\(\)]+/gmi, ""));
-        const waitingLink = `https://sn-bapi.vercel.app/scratchAuthExt.html?openLocation=${encodeURIComponent(window.origin)}`;
+        const waitingLink = `hhttps://sn-bapi.vercel.app/scratchAuthExt.html?openLocation=${encodeURIComponent(window.origin)}`;
 
         // listen for events before opening
         let login;

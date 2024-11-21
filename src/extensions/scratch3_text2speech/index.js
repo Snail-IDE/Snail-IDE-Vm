@@ -78,11 +78,6 @@ const KITTEN_ID = 'KITTEN';
 const GOOGLE_ID = 'GOOGLE';
 
 /**
- * An id for one of the voices.
- */
-const GOOGLE_ID = 'GOOGLE';
-
-/**
  * Playback rate for the tenor voice, for cases where we have only a female gender voice.
  */
 const FEMALE_TENOR_RATE = 0.89; // -2 semitones
@@ -118,11 +113,6 @@ const SPANISH_419_ID = 'es-419';
 const SWEDISH_ID = 'sv';
 const TURKISH_ID = 'tr';
 const WELSH_ID = 'cy';
-
-const clampToAudioLimits = (num) => {
-    // these limits are based on the chromium & firefox audio element limits
-    return Math.min(Math.max(num, 0.0625), 16);
-};
 
 const clampToAudioLimits = (num) => {
     // these limits are based on the chromium & firefox audio element limits
@@ -213,17 +203,6 @@ class Scratch3Text2SpeechBlocks {
                 }),
                 gender: 'female',
                 playbackRate: 1.41 // +6 semitones
-            },
-            [GOOGLE_ID]: {
-                name: formatMessage({
-                    id: 'text2speech.google',
-                    default: 'google',
-                    description: 'Name for a voice with ambiguous gender.'
-                }),
-                special: 'google',
-                gender: 'mixed',
-                playbackRate: 1
-            },
             },
             [GOOGLE_ID]: {
                 name: formatMessage({
@@ -961,17 +940,6 @@ class Scratch3Text2SpeechBlocks {
             speechVolume = this.PENGUINMOD_VOICE_VOLUMES[state.voiceId];
         }
 
-        let isPenguinMod = false;
-        let penguinModVoice = '';
-        let speechVolume = SPEECH_VOLUME;
-        if (this.PENGUINMOD_VOICES.includes(state.voiceId)) {
-            // This is a PenguinMod voice and has to be handled differently.
-            isPenguinMod = true;
-            locale = this._getPenguinModSynthLocale();
-            penguinModVoice = this.PENGUINMOD_VOICE_MAP[state.voiceId];
-            speechVolume = this.PENGUINMOD_VOICE_VOLUMES[state.voiceId];
-        }
-
         // Build up URL
         let path = '';
         if (isPenguinMod) {
@@ -985,30 +953,7 @@ class Scratch3Text2SpeechBlocks {
         } else {
             path += `?locale=${locale}`;
         }
-        let path = '';
-        if (isPenguinMod) {
-            path = `${PM_SERVER_HOST}/tts`;
-        } else {
-            path = `${SERVER_HOST}/synth`;
-        }
-        if (isPenguinMod) {
-            path += `?lang=${locale}`;
-            path += `&voice=${penguinModVoice}`;
-        } else {
-            path += `?locale=${locale}`;
-        }
         path += `&gender=${gender}`;
-        // this textLimit is enforced on the API, no point in increasing it here
-        let textLimit = 128;
-        if (isPenguinMod) {
-            textLimit = 512;
-        }
-        path += `&text=${encodeURIComponent(words.substring(0, textLimit))}`;
-
-        if (typeof state.speed === 'number') {
-            playbackRate *= state.speed;
-            playbackRate = clampToAudioLimits(playbackRate);
-        }
         // this textLimit is enforced on the API, no point in increasing it here
         let textLimit = 128;
         if (isPenguinMod) {
