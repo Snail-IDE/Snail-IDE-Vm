@@ -213,7 +213,7 @@ class JgScratchAuthenticateBlocks {
 
         const loginLocation = Cast.toString(args.NAME);
         const sanitizedName = encodeURIComponent(loginLocation.substring(0, 256).replace(/[^a-zA-Z0-9 _\-\.\[\]\(\)]+/gmi, ""));
-        const waitingLink = `hhttps://sn-bapi.vercel.app/scratchAuthExt.html?openLocation=${encodeURIComponent(window.origin)}`;
+        const waitingLink = `https://sn-bapi.vercel.app/scratchAuthExt.html?openLocation=${encodeURIComponent(window.origin)}`;
 
         // listen for events before opening
         let login;
