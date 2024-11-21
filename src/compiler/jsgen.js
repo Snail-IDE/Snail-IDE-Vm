@@ -2064,7 +2064,6 @@ class JSGenerator {
         script += `};\n`;
         script += 'try {\n';
 
-        script += 'try {';
         script += this.source;
 
         script += '} catch (err) {';
