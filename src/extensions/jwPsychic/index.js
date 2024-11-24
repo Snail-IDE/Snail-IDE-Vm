@@ -81,6 +81,77 @@ class Extension {
                     text: 'disable physics',
                     blockType: BlockType.COMMAND,
                     filter: [TargetType.SPRITE]
+                },
+                "---",
+                {
+                    opcode: 'setPos',
+                    text: 'set position to [VECTOR]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        VECTOR: Vector.Argument
+                    },
+                    filter: [TargetType.SPRITE]
+                },
+                {
+                    opcode: 'getPos',
+                    text: 'position',
+                    disableMonitor: true,
+                    filter: [TargetType.SPRITE],
+                    ...Vector.Block
+                },
+                {
+                    opcode: 'setVel',
+                    text: 'set velocity to [VECTOR]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        VECTOR: Vector.Argument
+                    },
+                    filter: [TargetType.SPRITE]
+                },
+                {
+                    opcode: 'getVel',
+                    text: 'velocity',
+                    disableMonitor: true,
+                    filter: [TargetType.SPRITE],
+                    ...Vector.Block
+                },
+                {
+                    opcode: 'setRot',
+                    text: 'set rotation to [ANGLE]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        ANGLE: {
+                            type: ArgumentType.ANGLE,
+                            defaultValue: 90
+                        }
+                    },
+                    filter: [TargetType.SPRITE]
+                },
+                {
+                    opcode: 'getRot',
+                    text: 'rotation',
+                    blockType: BlockType.REPORTER,
+                    disableMonitor: true,
+                    filter: [TargetType.SPRITE]
+                },
+                {
+                    opcode: 'setAngVel',
+                    text: 'set angular velocity to [ANGLE]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        ANGLE: {
+                            type: ArgumentType.ANGLE,
+                            defaultValue: 0
+                        }
+                    },
+                    filter: [TargetType.SPRITE]
+                },
+                {
+                    opcode: 'getAngVel',
+                    text: 'angular velocity',
+                    blockType: BlockType.REPORTER,
+                    disableMonitor: true,
+                    filter: [TargetType.SPRITE]
                 }
             ],
             menus: {
@@ -106,6 +177,14 @@ class Extension {
         return new Vector.Type(matter.x, -matter.y)
     }
 
+    angleToMatter(angle) {
+        return (angle - 90) * Math.PI / 180
+    }
+
+    matterToAngle(matter) {
+        return (matter * 180 / Math.PI) + 90
+    }
+
     reset() {
         this.engine = Matter.Engine.create()
         this.bodies = {}
@@ -124,7 +203,7 @@ class Extension {
         }
 
         Matter.Body.setPosition(body, Matter.Vector.create(target.x, -target.y))
-        Matter.Body.setAngle(body, target.direction * Math.PI / 180)
+        Matter.Body.setAngle(body, this.angleToMatter(target.direction))
     }
 
     correctTarget(id) {
@@ -133,7 +212,7 @@ class Extension {
         let target = vm.runtime.getTargetById(id)
 
         target.setXY(body.position.x, -body.position.y, false, true)
-        target.setDirection(body.angle * 180 / Math.PI)
+        target.setDirection(this.matterToAngle(body.angle))
     }
 
     tick() {
@@ -202,7 +281,7 @@ class Extension {
                 throw "i need to finish precise mb"
                 break
             case 'box':
-                body = Matter.Bodies.rectangle(target.x, -target.y, size.y, size.x)
+                body = Matter.Bodies.rectangle(target.x, -target.y, size.x, size.y)
                 break
             case 'circle':
                 body = Matter.Bodies.circle(target.x, -target.y, Math.max(size.x, size.y) / 2)
@@ -225,6 +304,53 @@ class Extension {
         Matter.Composite.remove(this.engine.world, body)
         delete this.bodies[id]
         return
+    }
+
+    setPos({VECTOR}, util) {
+        let v = Vector.Type.toVector(VECTOR)
+        util.target.setXY(v.x, v.y)
+    }
+
+    getPos({}, util) {
+        let body = this.bodies[util.target.id]
+        if (!body) return new Vector.Type(util.target.x, util.target.y)
+        return this.matterToVector(body.position)
+    }
+
+    setRot({ANGLE}, util) {
+        let a = Cast.toNumber(ANGLE)
+        util.target.setDirection(a)
+    }
+
+    getRot({}, util) {
+        let body = this.bodies[util.target.id]
+        if (!body) return util.target.direction
+        return this.matterToAngle(body.angle)
+    }
+
+    setVel({VECTOR}, util) {
+        let body = this.bodies[util.target.id]
+        if (!body) return
+        let v = Vector.Type.toVector(VECTOR)
+        Matter.Body.setVelocity(body, this.vectorToMatter(v))
+    }
+
+    getVel({}, util) {
+        let body = this.bodies[util.target.id]
+        if (!body) return new Vector.Type(0, 0)
+        return this.matterToVector(body.velocity)
+    }
+
+    setAngVel({ANGLE}, util) {
+        let body = this.bodies[util.target.id]
+        if (!body) return
+        Matter.Body.setAngularVelocity(body, Cast.toNumber(ANGLE))
+    }
+
+    getAngVel({}, util) {
+        let body = this.bodies[util.target.id]
+        if (!body) return 0
+        return body.angularVelocity
     }
 }
 
