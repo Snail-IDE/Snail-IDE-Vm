@@ -377,6 +377,8 @@ class ExtensionManager {
         this.keepOlder = [];
         // map of all new shas so we know when a new code update has happened and so ask the user about it
         this.extensionHashes = {};
+
+        this.extensionSources = Object.create(null);
     }
 
     getCoreExtensionList() {
@@ -481,7 +483,10 @@ class ExtensionManager {
         if (extensionURL.includes("penguinmod.site")) {
             alert("Extensions using penguinmod.site are deprecated, please swap them over to use penguinmod.com instead.")
         }
-        const normalURL = extensionURL.replace("penguinmod.site", "penguinmod.com");
+        if (extensionURL.includes("snail-ide.js.org")) {
+            alert("Extensions using snail-ide.js.org are deprecated, please swap them over to use editor.snail-ide.com instead.")
+        }
+        const normalURL = extensionURL.replace("penguinmod.site", "penguinmod.com").replace("snail-ide.js.org", "editor.snail-ide.com");
 
         this.runtime.setExternalCommunicationMethod('customExtensions', true);
 
@@ -504,6 +509,7 @@ class ExtensionManager {
             reader.readAsText(blob)
         })
         this.extensionHashes[extensionURL] = newHash
+        const extensionSource = await blob.text();
         if (oldHash && oldHash !== newHash && this.securityManager.shouldUseLocal(extensionURL)) return Promise.reject('useLocal') 
 
         if (sandboxMode === 'unsandboxed') {
@@ -516,6 +522,7 @@ class ExtensionManager {
 
             for (const extensionObject of extensionObjects) {
                 const extensionInfo = extensionObject.getInfo();
+                this.extensionSources[extensionInfo.id] = extensionSource;
                 const serviceName = `unsandboxed.${fakeWorkerId}.${extensionInfo.id}`;
                 dispatch.setServiceSync(serviceName, extensionObject);
                 dispatch.callSync('extensions', 'registerExtensionServiceSync', serviceName);
@@ -540,7 +547,7 @@ class ExtensionManager {
         /* eslint-enable max-len */
 
         return new Promise((resolve, reject) => {
-            this.pendingExtensions.push({ extensionURL: blobUrl, resolve, reject });
+            this.pendingExtensions.push({ extensionURL: `data:text/javascript;base64,${btoa(extensionSource)}`, resolve, reject });
             dispatch.addWorker(new ExtensionWorker());
         }).catch(error => this._failedLoadingExtensionScript(error));
     }
@@ -550,6 +557,7 @@ class ExtensionManager {
         dispatch.call(serviceName, 'dispose');
         delete dispatch.services[serviceName];
         delete this.runtime[`ext_${id}`];
+        delete this.extensionSources[id];
 
         this._loadedExtensions.delete(id);
         const workerId = +serviceName.split('.')[1];
@@ -651,6 +659,12 @@ class ExtensionManager {
         const info = dispatch.callSync(serviceName, 'getInfo');
         this._registerExtensionInfo(serviceName, info);
     }
+
+    async getSandboxedExtensionInfo(id) {
+        const serviceName = this._loadedExtensions.get(id);
+        const info = await dispatch.call(serviceName, 'getInfo');
+        return info;
+    };
 
     /**
      * Collect extension metadata from the specified service and begin the extension registration process.
