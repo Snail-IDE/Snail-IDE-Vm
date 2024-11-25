@@ -22,6 +22,10 @@ class TargetType {
         this.targetId = targetId
     }
 
+    jwArrayHandler() {
+        return 'Target'
+    }
+
     toString() {
         return this.targetId
     }
@@ -52,19 +56,14 @@ class TargetType {
             return span("Unknown")
         }
     }
-
-    /** @returns {number} */
-    get magnitude() { return Math.hypot(this.x, this.y) }
-
-    /** @returns {number} */
-    get angle() {return Math.atan2(this.x, this.y) * (180 / Math.PI)}
 }
 
 const Target = {
     Type: TargetType,
     Block: {
         blockType: BlockType.REPORTER,
-        forceOutputType: "Target"
+        forceOutputType: "Target",
+        disableMonitor: true
     },
     Argument: {
         check: ["Target"]
@@ -85,7 +84,11 @@ class Extension {
                 {
                     opcode: 'this',
                     text: 'this target',
-                    disableMonitor: true,
+                    ...Target.Block
+                },
+                {
+                    opcode: 'stage',
+                    text: 'stage target',
                     ...Target.Block
                 },
                 '---',
@@ -99,6 +102,10 @@ class Extension {
 
     this({}, util) {
         return new Target.Type(util.target.id)
+    }
+
+    stage() {
+        return new Target.Type(vm.runtime._stageTarget.id)
     }
 }
 

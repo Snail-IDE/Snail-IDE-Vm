@@ -40,6 +40,10 @@ class VectorType {
         return new VectorType(0, 0)
     }
 
+    jwArrayHandler() {
+        return 'Vector'
+    }
+
     toString() {
         return `${this.x},${this.y}`
     }
@@ -92,7 +96,8 @@ const Vector = {
     Block: {
         blockType: BlockType.REPORTER,
         blockShape: BlockShape.LEAF,
-        forceOutputType: "Vector"
+        forceOutputType: "Vector",
+        disableMonitor: true
     },
     Argument: {
         shape: BlockShape.LEAF,
