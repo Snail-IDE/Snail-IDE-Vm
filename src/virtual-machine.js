@@ -456,9 +456,11 @@ class VirtualMachine extends EventEmitter {
                     return resolve([json, sb1.zip]);
                 }
 
-                // if it isnt a zip, maby its the roject.json in ArrayBuffer form
+                // if it isnt a zip, maby its the project.json in ArrayBuffer form
                 if ((tag.slice(0, 2) !== 'PK') && (typeof input !== 'string'))
-                    input = [...arr].map(String.fromCharCode).join('');
+                    const decoder = new TextDecoder('UTF-8');
+                    input = decoder.decode(input);
+                }
                 if (typeof input === 'string') 
                     input = JSON.parse(input);
                 // generic objects return [object Object] on stringify
