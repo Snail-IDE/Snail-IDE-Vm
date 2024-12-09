@@ -457,7 +457,7 @@ class VirtualMachine extends EventEmitter {
                 }
 
                 // if it isnt a zip, maby its the roject.json in ArrayBuffer form
-                if (tag.slice(0, 2) !== 'PK')
+                if ((tag.slice(0, 2) !== 'PK') && (typeof input !== 'string'))
                     input = [...arr].map(String.fromCharCode).join('');
                 if (typeof input === 'string') 
                     input = JSON.parse(input);
