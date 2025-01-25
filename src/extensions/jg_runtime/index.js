@@ -2,6 +2,8 @@ const formatMessage = require('format-message');
 const BlockType = require('../../extension-support/block-type');
 const ArgumentType = require('../../extension-support/argument-type');
 const BufferUtil = new (require('../../util/array buffer'));
+const Cast = require('../../util/cast');
+const Color = require('../../util/color');
 
 // ShovelUtils
 let fps = 0;
@@ -18,31 +20,26 @@ class JgRuntimeBlocks {
          */
         this.runtime = runtime;
 
+        // SharkPool
+        this.pausedScripts = Object.create(null);
+
         // ShovelUtils
         // Based on from https://www.growingwiththeweb.com/2017/12/fast-simple-js-fps-counter.html
         const times = [];
         fps = this.runtime.frameLoop.framerate;
-        const oldStep = this.runtime._step;
-        this.runtime._step = function (...args) {
-            oldStep.call(this, ...args);
+        this.runtime.on('RUNTIME_STEP_START', () => {
             const now = performance.now();
-            while (times.length > 0 && times[0] <= now - 1000) {
-                times.shift();
-            }
+            while (times.length > 0 && times[0] <= now - 1000) { times.shift() }
             times.push(now);
             fps = times.length;
-        };
+        });
+        this.runtime.on('PROJECT_STOP_ALL', () => { this.pausedScripts = Object.create(null) });
     }
 
     _typeIsBitmap(type) {
         return (
-            type === 'image/png' ||
-            type === 'image/bmp' ||
-            type === 'image/jpg' ||
-            type === 'image/jpeg' ||
-            type === 'image/jfif' ||
-            type === 'image/webp' ||
-            type === 'image/gif'
+            type === 'image/png' || type === 'image/bmp' || type === 'image/jpg' || type === 'image/jpeg' || 
+            type === 'image/jfif' || type === 'image/webp' || type === 'image/gif'
         );
     }
 
@@ -54,7 +51,7 @@ class JgRuntimeBlocks {
             id: 'jgRuntime',
             name: 'Runtime',
             color1: '#777777',
-            color2: '#555555',
+            color2: '#6a6a6a',
             blocks: [
                 {
                     opcode: 'addSpriteUrl',
@@ -63,7 +60,7 @@ class JgRuntimeBlocks {
                     arguments: {
                         URL: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'https://api.allorigins.win/raw?url=https://github.com/PenguinMod/FreshPkg/raw/main/pkgs/anticors/anticors.sprite3'
+                            defaultValue: `https://corsproxy.io/?${encodeURIComponent('https://penguinmod.com/Sprite1.pms')}`
                         }
                     }
                 },
@@ -74,11 +71,30 @@ class JgRuntimeBlocks {
                     arguments: {
                         URL: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'https://api.allorigins.win/raw?url=https://studio.penguinmod.site/static/assets/9525874be2b1d66bd448bf53400011a9.svg'
+                            defaultValue: `https://corsproxy.io/?${encodeURIComponent('https://penguinmod.com/navicon.png')}`
                         },
                         name: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'blue flag'
+                            defaultValue: 'penguinmod'
+                        }
+                    }
+                },
+                {
+                    opcode: 'addCostumeUrlForceMime',
+                    text: 'add [costtype] costume [name] from [URL]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        costtype: {
+                            type: ArgumentType.STRING,
+                            menu: "costumeMimeType"
+                        },
+                        URL: {
+                            type: ArgumentType.STRING,
+                            defaultValue: `https://corsproxy.io/?${encodeURIComponent('https://penguinmod.com/navicon.png')}`
+                        },
+                        name: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'penguinmod'
                         }
                     }
                 },
@@ -93,7 +109,18 @@ class JgRuntimeBlocks {
                         },
                         NAME: {
                             type: ArgumentType.STRING,
-                            defaultValue: 'Buauauau'
+                            defaultValue: 'Meow'
+                        }
+                    }
+                },
+                {
+                    opcode: 'loadProjectDataUrl',
+                    text: 'load project from [URL]',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        URL: {
+                            type: ArgumentType.STRING,
+                            defaultValue: ''
                         }
                     }
                 },
@@ -119,6 +146,13 @@ class JgRuntimeBlocks {
                         }
                     }
                 },
+                {
+                    opcode: 'getProjectDataUrl',
+                    text: 'get data url of project',
+                    blockType: BlockType.REPORTER,
+                    disableMonitor: true
+                },
+                '---',
                 {
                     opcode: 'setStageSize',
                     text: formatMessage({
@@ -164,7 +198,35 @@ class JgRuntimeBlocks {
                         description: 'Block that returns whether Turbo Mode is enabled on the project or not.'
                     }),
                     disableMonitor: false,
+                    hideFromPalette: true,
                     blockType: BlockType.BOOLEAN
+                },
+                '---',
+                {
+                    opcode: 'setMaxClones',
+                    text: formatMessage({
+                        id: 'jgRuntime.blocks.setMaxClones',
+                        default: 'set max clones to [MAX]',
+                        description: 'Block that enables or disables configuration on the runtime like high quality pen or turbo mode.'
+                    }),
+                    disableMonitor: false,
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        MAX: {
+                            menu: 'cloneLimit',
+                            defaultValue: 300
+                        }
+                    }
+                },
+                {
+                    opcode: 'maxAmountOfClones',
+                    text: formatMessage({
+                        id: 'jgRuntime.blocks.maxAmountOfClones',
+                        default: 'max clone count',
+                        description: 'Block that returns the maximum amount of clones that may exist.'
+                    }),
+                    disableMonitor: false,
+                    blockType: BlockType.REPORTER
                 },
                 {
                     opcode: 'amountOfClones',
@@ -177,25 +239,16 @@ class JgRuntimeBlocks {
                     blockType: BlockType.REPORTER
                 },
                 {
-                    opcode: 'getStageWidth',
+                    opcode: 'getIsClone',
                     text: formatMessage({
-                        id: 'jgRuntime.blocks.getStageWidth',
-                        default: 'stage width',
-                        description: 'Block that returns the width of the stage.'
+                        id: 'jgRuntime.blocks.getIsClone',
+                        default: 'is clone?',
+                        description: 'Block that returns whether the sprite is a clone or not.'
                     }),
-                    disableMonitor: false,
-                    blockType: BlockType.REPORTER
+                    disableMonitor: true,
+                    blockType: BlockType.BOOLEAN
                 },
-                {
-                    opcode: 'getStageHeight',
-                    text: formatMessage({
-                        id: 'jgRuntime.blocks.getStageHeight',
-                        default: 'stage height',
-                        description: 'Block that returns the height of the stage.'
-                    }),
-                    disableMonitor: false,
-                    blockType: BlockType.REPORTER
-                },
+                '---',
                 {
                     opcode: 'setMaxFrameRate',
                     text: formatMessage({
@@ -230,6 +283,65 @@ class JgRuntimeBlocks {
                     }),
                     disableMonitor: false,
                     blockType: BlockType.REPORTER
+                },
+                '---',
+                {
+                    opcode: 'setBackgroundColor',
+                    text: formatMessage({
+                        id: 'jgRuntime.blocks.setBackgroundColor',
+                        default: 'set stage background color to [COLOR]',
+                        description: 'Sets the background color of the stage.'
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        COLOR: {
+                            type: ArgumentType.COLOR
+                        }
+                    }
+                },
+                {
+                    opcode: 'getBackgroundColor',
+                    text: formatMessage({
+                        id: 'jgRuntime.blocks.getBackgroundColor',
+                        default: 'stage background color',
+                        description: 'Block that returns the stage background color in HEX.'
+                    }),
+                    disableMonitor: false,
+                    blockType: BlockType.REPORTER
+                },
+                "---",
+                {
+                    opcode: "pauseScript",
+                    blockType: BlockType.COMMAND,
+                    text: "pause this script using name: [NAME]",
+                    arguments: {
+                        NAME: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "my script",
+                        },
+                    }
+                },
+                {
+                    opcode: "unpauseScript",
+                    blockType: BlockType.COMMAND,
+                    text: "unpause script named: [NAME]",
+                    arguments: {
+                        NAME: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "my script",
+                        },
+                    }
+                },
+                {
+                    opcode: "isScriptPaused",
+                    blockType: BlockType.BOOLEAN,
+                    text: "is script named [NAME] paused?",
+                    arguments: {
+                        NAME: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "my script",
+                        },
+                    }
                 },
                 "---",
                 {
@@ -358,6 +470,12 @@ class JgRuntimeBlocks {
                     disableMonitor: false,
                     blockType: BlockType.REPORTER
                 },
+                {
+                    opcode: 'getAllFonts',
+                    text: 'get all fonts',
+                    disableMonitor: false,
+                    blockType: BlockType.REPORTER
+                },
                 "---",
                 {
                     opcode: 'getAllVariables',
@@ -453,71 +571,80 @@ class JgRuntimeBlocks {
                         }
                     }
                 },
-                "---",
-                {
-                    opcode: 'getIsClone',
-                    text: formatMessage({
-                        id: 'jgRuntime.blocks.getIsClone',
-                        default: 'is clone? (deprecated)',
-                        description: 'Block that returns whether the sprite is a clone or not.'
-                    }),
-                    disableMonitor: true,
-                    hideFromPalette: true,
-                    blockType: BlockType.BOOLEAN
-                },
             ],
             menus: {
                 objectType: {
                     acceptReporters: true,
                     items: [
-                        "sprite",
-                        "costume",
-                        "sound",
+                        "sprite", "costume", "sound"
                     ].map(item => ({ text: item, value: item }))
                 },
                 variableScope: {
                     acceptReporters: true,
                     items: [
-                        "all sprites",
-                        "this sprite",
+                        "all sprites", "this sprite"
                     ].map(item => ({ text: item, value: item }))
                 },
                 allVariableScope: {
                     acceptReporters: true,
                     items: [
-                        "for all sprites",
-                        "in every sprite",
-                        "in this sprite",
+                        "for all sprites", "in every sprite", "in this sprite"
                     ].map(item => ({ text: item, value: item }))
                 },
                 allVariableType: {
                     acceptReporters: true,
                     items: [
-                        "for all sprites",
-                        "in every sprite",
-                        "in this sprite",
-                        "in the cloud",
+                        "for all sprites", "in every sprite",
+                        "in this sprite", "in the cloud"
                     ].map(item => ({ text: item, value: item }))
                 },
                 variableTypes: {
                     acceptReporters: true,
                     items: [
-                        "all sprites",
-                        "this sprite",
-                        "cloud",
+                        "all sprites", "this sprite", "cloud"
                     ].map(item => ({ text: item, value: item }))
                 },
+                cloneLimit: {
+                    items: [
+                        '100', '128', '300', '500',
+                        '1000', '1024', '5000',
+                        '10000', '16384', 'Infinity'
+                    ],
+                    isTypeable: true,
+                    isNumeric: true
+                },
+                runtimeConfig: {
+                    acceptReporters: true,
+                    items: [
+                        "turbo mode",
+                        "high quality pen",
+                        "offscreen sprites",
+                        "remove miscellaneous limits",
+                        "disable offscreen rendering",
+                        "interpolation",
+                        "warp timer"
+                    ]
+                },
+                renderConfigCappable: {
+                    acceptReporters: true,
+                    items: ["animated text resolution"]
+                },
+                renderConfigNumber: {
+                    acceptReporters: true,
+                    items: ["animated text resolution"]
+                },
+                onoff: ["on", "off"],
+                costumeMimeType: ["png", "bmp", "jpg", "jpeg", "jfif", "webp", "gif", "vector"],
+                cappableSettings: ["uncapped", "capped", "fixed"]
             }
         };
     }
     // utils
     _generateScratchId() {
-        const characters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "/", "|", ",", ".", "{", "}", "[", "]", "(", ")", "+", "-", "!", "?", "`"];
-        const array = Array.from(Array(20).keys());
-        const normalArray = array.map(() => {
-            return characters[Math.round(Math.random() * (characters.length - 1))]
-        })
-        return normalArray.join("");
+        const soup = "!#%()*+,-./:;=?@[]^_`{|}~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        const id = [];
+        for (let i = 0; i < 20; i++) { id[i] = soup.charAt(Math.random() * soup.length) }
+        return id.join("");
     }
 
     // blocks
@@ -525,68 +652,52 @@ class JgRuntimeBlocks {
         const targetId = util.target.id;
         return new Promise(resolve => {
             fetch(args.URL, { method: 'GET' }).then(x => x.blob().then(blob => {
+                const costumeHasForcedMime = !!args.costtype;
+                const costumeForcedMimeBitmap = args.costtype !== "vector";
                 if (!(
-                    (this._typeIsBitmap(blob.type)) ||
-                    (blob.type === 'image/svg+xml')
-                )) {
+                    (this._typeIsBitmap(blob.type)) || (blob.type === 'image/svg+xml')
+                ) && !costumeHasForcedMime) {
                     resolve();
                     throw new Error(`Invalid mime type: "${blob.type}"`);
                 }
-
-                const assetType = this._typeIsBitmap(blob.type)
-                    ? this.runtime.storage.AssetType.ImageBitmap
-                    : this.runtime.storage.AssetType.ImageVector;
-
-                const dataType = blob.type === 'image/svg+xml'
-                    ? 'svg'
-                    : blob.type.split('/')[1];
-
-                blob.arrayBuffer()
-                    .then(buffer => {
-                        const data = dataType === 'image/svg+xml'
-                            ? buffer
-                            : new Uint8Array(buffer);
-                        const asset = this.runtime.storage.createAsset(assetType, dataType, data, null, true);
-                        const name = `${asset.assetId}.${asset.dataFormat}`;
-                        const spriteJson = {
-                            asset: asset,
-                            md5ext: name,
-                            name: args.name
-                        };
-                        const request = vm.addCostume(name, spriteJson, targetId);
-                        if (request.then) {
-                            request.then(resolve);
-                        } else {
-                            resolve();
-                        }
-                    })
-                    .catch(err => {
-                        console.error(`Failed to Load Costume: ${err}`);
-                        console.warn(err);
-                        resolve();
-                    });
+                const assetType = (costumeHasForcedMime ? costumeForcedMimeBitmap : this._typeIsBitmap(blob.type)) ? this.runtime.storage.AssetType.ImageBitmap : this.runtime.storage.AssetType.ImageVector;
+                const dataType = costumeHasForcedMime ? (costumeForcedMimeBitmap ? args.costtype : 'svg') : (blob.type === 'image/svg+xml' ? 'svg' : blob.type.split('/')[1]);
+                blob.arrayBuffer().then(buffer => {
+                    const data = costumeHasForcedMime ? (!costumeForcedMimeBitmap ? buffer : new Uint8Array(buffer)) : (dataType === 'image/svg+xml'
+                        ? buffer : new Uint8Array(buffer));
+                    const asset = this.runtime.storage.createAsset(assetType, dataType, data, null, true);
+                    const name = `${asset.assetId}.${asset.dataFormat}`;
+                    const spriteJson = { asset: asset, md5ext: name, name: args.name };
+                    const request = vm.addCostume(name, spriteJson, targetId);
+                    if (request.then) request.then(resolve);
+                    else resolve();
+                })
+                .catch(err => {
+                    console.error(`Failed to Load Costume: ${err}`);
+                    resolve();
+                });
             }));
         });
     }
+    addCostumeUrlForceMime(args, util) {
+        this.addCostumeUrl(args, util);
+    }
     deleteCostume(args, util) {
-        const index = (Number(args.COSTUME) ? Number(args.COSTUME) : 1) - 1;
+        const index = Math.round(Cast.toNumber(args.COSTUME)) - 1;
         if (index < 0) return;
         util.target.deleteCostume(index);
     }
     deleteSound(args, util) {
-        const index = (Number(args.SOUND) ? Number(args.SOUND) : 1) - 1;
+        const index = Math.round(Cast.toNumber(args.SOUND)) - 1;
         if (index < 0) return;
         util.target.deleteSound(index);
     }
-    getIndexOfCostume(args, util) {
-        return util.target.getCostumeIndexByName(args.costume) + 1;
-    }
+    getIndexOfCostume(args, util) { return util.target.getCostumeIndexByName(args.costume) + 1 }
     getIndexOfSound(args, util) {
         let index = 0;
         const sounds = util.target.getSounds();
         for (let i = 0; i < sounds.length; i++) {
-            const sound = sounds[i];
-            if (sound.name === args.NAME) index = i + 1;
+            if (sounds[i].name === args.NAME) index = i + 1;
         }
         return index;
     }
@@ -630,8 +741,7 @@ class JgRuntimeBlocks {
         return !(util.target.isOriginal);
     }
     setMaxFrameRate(args) {
-        let frameRate = Number(args.FRAMERATE) || 1;
-        if (frameRate <= 0) frameRate = 1;
+        let frameRate = Cast.toNumber(args.FRAMERATE);
         this.runtime.frameLoop.setFramerate(frameRate);
     }
     deleteSprite(args) {
@@ -662,10 +772,8 @@ class JgRuntimeBlocks {
                 if (!costumes[index]) return "[]";
                 const costume = costumes[index];
                 const data = costume.asset.data;
-
                 const array = BufferUtil.bufferToArray(data.buffer);
-                const stringified = JSON.stringify(array);
-                return stringified;
+                return JSON.stringify(array);
             }
             case "sound": {
                 const sounds = util.target.getSounds();
@@ -673,13 +781,10 @@ class JgRuntimeBlocks {
                 if (!sounds[index]) return "[]";
                 const sound = sounds[index];
                 const data = sound.asset.data;
-
                 const array = BufferUtil.bufferToArray(data.buffer);
-                const stringified = JSON.stringify(array);
-                return stringified;
+                return JSON.stringify(array);
             }
-            default:
-                return "[]";
+            default: return "[]";
         }
     }
     getDataUriOption(args, util) {
@@ -703,21 +808,16 @@ class JgRuntimeBlocks {
                 const index = util.target.getCostumeIndexByName(args.NAME);
                 if (!costumes[index]) return "";
                 const costume = costumes[index];
-                const data = costume.asset;
-
-                return data.encodeDataURI();
+                return costume.asset.encodeDataURI();
             }
             case "sound": {
                 const sounds = util.target.getSounds();
                 const index = this.getIndexOfSound(args, util) - 1;
                 if (!sounds[index]) return "";
                 const sound = sounds[index];
-                const data = sound.asset;
-
-                return data.encodeDataURI();
+                return sound.asset.encodeDataURI();
             }
-            default:
-                return "";
+            default: return "";
         }
     }
     getAllSprites() {
@@ -730,6 +830,42 @@ class JgRuntimeBlocks {
     getAllSounds(_, util) {
         const sounds = util.target.getSounds();
         return JSON.stringify(sounds.map(sound => sound.name));
+    }
+    getAllFonts() {
+        const fonts = this.runtime.fontManager.getFonts();
+        return JSON.stringify(fonts.map(font => font.name));
+    }
+
+    loadProjectDataUrl(args) {
+        const url = Cast.toString(args.URL);
+        if (typeof ScratchBlocks !== "undefined") {
+            // We are in the editor. Ask before loading a new project to avoid unrecoverable data loss.
+            if (!confirm(`Runtime Extension - Editor: Are you sure you want to load a new project?\nEverything in the current project will be permanently deleted.`)) {
+                return;
+            }
+        }
+        console.log("Loading project from custom source...");
+        fetch(url)
+            .then((r) => r.arrayBuffer())
+            .then((buffer) => vm.loadProject(buffer))
+            .then(() => {
+                console.log("Loaded project!");
+                vm.greenFlag();
+            })
+            .catch((error) => {
+                console.log("Error loading custom project;", error);
+            });
+    }
+    getProjectDataUrl() {
+        return new Promise((resolve) => {
+            const failingUrl = 'data:application/octet-stream;base64,';
+            vm.saveProjectSb3().then(blob => {
+                const fileReader = new FileReader();
+                fileReader.onload = () => { resolve(fileReader.result); };
+                fileReader.onerror = () => { resolve(failingUrl) }
+                fileReader.readAsDataURL(blob);
+            }).catch(() => { resolve(failingUrl) });
+        });
     }
 
     getAllVariables(args, util) {
@@ -762,8 +898,7 @@ class JgRuntimeBlocks {
                 if (!variables) return "[]";
                 return JSON.stringify(Object.values(variables).filter(v => v.type !== "list").filter(v => v.isCloud === true).map(v => v.name));
             }
-            default:
-                return "[]";
+            default: return "[]";
         }
     }
     getAllLists(args, util) {
@@ -789,15 +924,12 @@ class JgRuntimeBlocks {
                 if (!variables) return "[]";
                 return JSON.stringify(Object.values(variables).filter(v => v.type === "list").map(v => v.name));
             }
-            default:
-                return "[]";
+            default: return "[]";
         }
     }
 
     // ShovelUtils
-    getFrameRate() {
-        return fps;
-    }
+    getFrameRate() { return fps }
     addSoundUrl(args, util) {
         const targetId = util.target.id;
         return new Promise((resolve) => {
@@ -806,16 +938,12 @@ class JgRuntimeBlocks {
                 .then((arrayBuffer) => {
                     const storage = this.runtime.storage;
                     const asset = new storage.Asset(
-                        storage.AssetType.Sound,
-                        null,
-                        storage.DataFormat.MP3,
-                        new Uint8Array(arrayBuffer),
-                        true
+                        storage.AssetType.Sound, null, storage.DataFormat.MP3,
+                        new Uint8Array(arrayBuffer), true
                     );
                     resolve(vm.addSound({
                         md5: asset.assetId + '.' + asset.dataFormat,
-                        asset: asset,
-                        name: args.NAME
+                        asset: asset, name: args.NAME
                     }, targetId));
                 }).catch(resolve);
         })
@@ -836,13 +964,8 @@ class JgRuntimeBlocks {
     variables_createVariable(args, util) {
         const variableName = args.NAME;
         switch (args.SCOPE) {
-            case "all sprites": {
-                return this.runtime.createNewGlobalVariable(variableName);
-            }
-            case "this sprite": {
-                const id = this._generateScratchId();
-                return util.target.createVariable(id, variableName, "");
-            }
+            case "all sprites": return this.runtime.createNewGlobalVariable(variableName);
+            case "this sprite": return util.target.createVariable(this._generateScratchId(), variableName, "");
         }
     }
     variables_createCloudVariable(args) {
@@ -855,40 +978,22 @@ class JgRuntimeBlocks {
     variables_createList(args, util) {
         const variableName = args.NAME;
         switch (args.SCOPE) {
-            case "all sprites": {
-                return this.runtime.createNewGlobalVariable(variableName, null, "list");
-            }
-            case "this sprite": {
-                const id = this._generateScratchId();
-                return util.target.createVariable(id, variableName, "list");
-            }
+            case "all sprites": return this.runtime.createNewGlobalVariable(variableName, null, "list");
+            case "this sprite": return util.target.createVariable(this._generateScratchId(), variableName, "list");
         }
     }
     variables_getVariable(args, util) {
         const variableName = args.NAME;
         let target;
         let isCloud = false;
-        switch (args.SCOPE) {
-            case "all sprites": {
-                target = this.runtime.getTargetForStage();
-                break;
-            }
-            case "this sprite": {
-                target = util.target;
-                break;
-            }
-            case "cloud": {
-                target = this.runtime.getTargetForStage();
-                isCloud = true;
-                break;
-            }
-            default:
-                return "";
-        }
+        if (args.SCOPE === "all sprites") target = this.runtime.getTargetForStage();
+        else if (args.SCOPE === "this sprite") target = util.target;
+        else if (args.SCOPE === "cloud") {
+            target = this.runtime.getTargetForStage();
+            isCloud = true;
+        } else return "";
         const variables = Object.values(target.variables).filter(variable => variable.type !== "list").filter(variable => {
-            if (variable.isCloud) {
-                return String(variable.name).replace("☁ ", "") === variableName;
-            }
+            if (variable.isCloud) return String(variable.name).replace("☁ ", "") === variableName;
             if (isCloud) return false; // above check should have already told us its a cloud variable
             return variable.name === variableName;
         });
@@ -900,19 +1005,10 @@ class JgRuntimeBlocks {
     variables_getList(args, util) {
         const variableName = args.NAME;
         let target;
-        switch (args.SCOPE) {
-            case "all sprites": {
-                target = this.runtime.getTargetForStage();
-                break;
-            }
-            case "this sprite": {
-                target = util.target;
-                break;
-            }
-            default:
-                return "[]";
-        }
-        const variables = Object.values(target.variables).filter(variable => variable.type === "list").filter(variable => variable.name === variableName);
+        if (args.SCOPE === "all sprites") target = this.runtime.getTargetForStage();
+        else if (args.SCOPE === "this sprite") target = util.target;
+        else return "[]";
+        const variables = Object.values(target.variables).filter(v => v.type === "list").filter(v => v.name === variableName);
         if (!variables) return "[]";
         const variable = variables[0];
         if (!variable) return "[]";
@@ -920,29 +1016,15 @@ class JgRuntimeBlocks {
     }
     variables_deleteVariable(args, util) {
         const variableName = args.NAME;
-        let target;
-        let isCloud = false;
-        switch (args.SCOPE) {
-            case "all sprites": {
-                target = this.runtime.getTargetForStage();
-                break;
-            }
-            case "this sprite": {
-                target = util.target;
-                break;
-            }
-            case "cloud": {
-                target = this.runtime.getTargetForStage();
-                isCloud = true;
-                break;
-            }
-            default:
-                return;
-        }
-        const variables = Object.values(target.variables).filter(variable => variable.type !== "list").filter(variable => {
-            if (variable.isCloud) {
-                return String(variable.name).replace("☁ ", "") === variableName;
-            }
+        let target, isCloud = false;
+        if (args.SCOPE === "all sprites") target = this.runtime.getTargetForStage();
+        else if (args.SCOPE === "this sprite") target = util.target;
+        else if (args.SCOPE === "cloud") {
+            target = this.runtime.getTargetForStage();
+            isCloud = true;
+        } else return;
+        const variables = Object.values(target.variables).filter(v => v.type !== "list").filter(variable => {
+            if (variable.isCloud) return String(variable.name).replace("☁ ", "") === variableName;
             if (isCloud) return false; // above check should have already told us its a cloud variable
             return variable.name === variableName;
         });
@@ -954,19 +1036,10 @@ class JgRuntimeBlocks {
     variables_deleteList(args, util) {
         const variableName = args.NAME;
         let target;
-        switch (args.SCOPE) {
-            case "all sprites": {
-                target = this.runtime.getTargetForStage();
-                break;
-            }
-            case "this sprite": {
-                target = util.target;
-                break;
-            }
-            default:
-                return;
-        }
-        const variables = Object.values(target.variables).filter(variable => variable.type === "list").filter(variable => variable.name === variableName);
+        if (args.SCOPE === "all sprites") target = this.runtime.getTargetForStage();
+        else if (args.SCOPE === "this sprite") target = util.target;
+        else return;
+        const variables = Object.values(target.variables).filter(v => v.type === "list").filter(v => v.name === variableName);
         if (!variables) return;
         const variable = variables[0];
         if (!variable) return;
@@ -974,29 +1047,15 @@ class JgRuntimeBlocks {
     }
     variables_existsVariable(args, util) {
         const variableName = args.NAME;
-        let target;
-        let isCloud = false;
-        switch (args.SCOPE) {
-            case "all sprites": {
-                target = this.runtime.getTargetForStage();
-                break;
-            }
-            case "this sprite": {
-                target = util.target;
-                break;
-            }
-            case "cloud": {
-                target = this.runtime.getTargetForStage();
-                isCloud = true;
-                break;
-            }
-            default:
-                return false;
-        }
-        const variables = Object.values(target.variables).filter(variable => variable.type !== "list").filter(variable => {
-            if (variable.isCloud) {
-                return String(variable.name).replace("☁ ", "") === variableName;
-            }
+        let target, isCloud = false;
+        if (args.SCOPE === "all sprites") target = this.runtime.getTargetForStage();
+        else if (args.SCOPE === "this sprite") target = util.target;
+        else if (args.SCOPE === "cloud") {
+            target = this.runtime.getTargetForStage();
+            isCloud = true;
+        } else return false;
+        const variables = Object.values(target.variables).filter(v => v.type !== "list").filter(variable => {
+            if (variable.isCloud) return String(variable.name).replace("☁ ", "") === variableName;
             if (isCloud) return false; // above check should have already told us its a cloud variable
             return variable.name === variableName;
         });
@@ -1008,19 +1067,10 @@ class JgRuntimeBlocks {
     variables_existsList(args, util) {
         const variableName = args.NAME;
         let target;
-        switch (args.SCOPE) {
-            case "all sprites": {
-                target = this.runtime.getTargetForStage();
-                break;
-            }
-            case "this sprite": {
-                target = util.target;
-                break;
-            }
-            default:
-                return false;
-        }
-        const variables = Object.values(target.variables).filter(variable => variable.type === "list").filter(variable => variable.name === variableName);
+        if (args.SCOPE === "all sprites") target = this.runtime.getTargetForStage();
+        else if (args.SCOPE === "this sprite") target = util.target;
+        else return false;
+        const variables = Object.values(target.variables).filter(v => v.type === "list").filter(v => v.name === variableName);
         if (!variables) return false;
         const variable = variables[0];
         if (!variable) return false;

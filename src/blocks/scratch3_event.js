@@ -49,6 +49,18 @@ class Scratch3EventBlocks {
         this.runtime.on('RUNTIME_STEP_START', () => {
             this.runtime.startHats('event_always');
         });
+
+        this.runtime.on("AFTER_EXECUTE", () => {
+            // Use a timeout as regular Block Threads and Events Blocks dont run at the Same Speed
+            setTimeout(() => {
+                const stage = this.runtime.getTargetForStage();
+                if (!stage) return; // happens when project is loading
+                const stageVars = stage.variables;
+                for (const key in stageVars) {
+                    if (stageVars[key].isSent !== undefined) stageVars[key].isSent = false;
+                }
+            }, 10);
+        });
     }
 
     /**
@@ -67,14 +79,14 @@ class Scratch3EventBlocks {
     }
 
     whenanything (args) {
-        return Boolean(args.ANYTHING || false);
+        return Cast.toBoolean(args.ANYTHING);
     }
 
     whenjavascript (args) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const js = Cast.toString(args.JS);
             SandboxRunner.execute(js).then(result => {
-                resolve(result.value === true)
+                resolve(result.value === true);
             })
         })
     }
@@ -151,6 +163,7 @@ class Scratch3EventBlocks {
             args.BROADCAST_OPTION.id, args.BROADCAST_OPTION.name);
         if (broadcastVar) {
             const broadcastOption = broadcastVar.name;
+            broadcastVar.isSent = true;
             util.startHats('event_whenbroadcastreceived', {
                 BROADCAST_OPTION: broadcastOption
             });
@@ -166,6 +179,7 @@ class Scratch3EventBlocks {
             const broadcastOption = util.stackFrame.broadcastVar.name;
             // Have we run before, starting threads?
             if (!util.stackFrame.startedThreads) {
+                broadcastVar.isSent = true;
                 // No - start hats for this broadcast.
                 util.stackFrame.startedThreads = util.startHats(
                     'event_whenbroadcastreceived', {

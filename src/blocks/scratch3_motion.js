@@ -12,7 +12,7 @@ const STAGE_ALIGNMENT = {
     RIGHT: 'right',
     MIDDLE: 'middle',
     BOTTOM: 'bottom'
-}
+};
 
 class Scratch3MotionBlocks {
     constructor (runtime) {
@@ -74,63 +74,63 @@ class Scratch3MotionBlocks {
         const stageHeight = this.runtime.stageHeight / 2;
         const snap = [];
         switch (side) {
-            case STAGE_ALIGNMENT.TOP:
-                util.target.setXY(0, stageHeight);
-                snap.push('top');
-                break;
-            case STAGE_ALIGNMENT.LEFT:
-                util.target.setXY(0 - stageWidth, 0);
-                snap.push('left');
-                break;
-            case STAGE_ALIGNMENT.MIDDLE:
-                util.target.setXY(0, 0);
-                break;
-            case STAGE_ALIGNMENT.RIGHT:
-                util.target.setXY(stageWidth, 0);
-                snap.push('right');
-                break;
-            case STAGE_ALIGNMENT.BOTTOM:
-                util.target.setXY(0, 0 - stageHeight);
-                snap.push('bottom');
-                break;
-            case STAGE_ALIGNMENT.TOP_LEFT:
-                util.target.setXY(0 - stageWidth, stageHeight);
-                snap.push('top');
-                snap.push('left');
-                break;
-            case STAGE_ALIGNMENT.TOP_RIGHT:
-                util.target.setXY(stageWidth, stageHeight);
-                snap.push('top');
-                snap.push('right');
-                break;
-            case STAGE_ALIGNMENT.BOTTOM_LEFT:
-                util.target.setXY(0 - stageWidth, 0 - stageHeight);
-                snap.push('bottom');
-                snap.push('left');
-                break;
-            case STAGE_ALIGNMENT.BOTTOM_RIGHT:
-                util.target.setXY(stageWidth, 0 - stageHeight);
-                snap.push('bottom');
-                snap.push('right');
-                break;
+        case STAGE_ALIGNMENT.TOP:
+            util.target.setXY(0, stageHeight);
+            snap.push('top');
+            break;
+        case STAGE_ALIGNMENT.LEFT:
+            util.target.setXY(0 - stageWidth, 0);
+            snap.push('left');
+            break;
+        case STAGE_ALIGNMENT.MIDDLE:
+            util.target.setXY(0, 0);
+            break;
+        case STAGE_ALIGNMENT.RIGHT:
+            util.target.setXY(stageWidth, 0);
+            snap.push('right');
+            break;
+        case STAGE_ALIGNMENT.BOTTOM:
+            util.target.setXY(0, 0 - stageHeight);
+            snap.push('bottom');
+            break;
+        case STAGE_ALIGNMENT.TOP_LEFT:
+            util.target.setXY(0 - stageWidth, stageHeight);
+            snap.push('top');
+            snap.push('left');
+            break;
+        case STAGE_ALIGNMENT.TOP_RIGHT:
+            util.target.setXY(stageWidth, stageHeight);
+            snap.push('top');
+            snap.push('right');
+            break;
+        case STAGE_ALIGNMENT.BOTTOM_LEFT:
+            util.target.setXY(0 - stageWidth, 0 - stageHeight);
+            snap.push('bottom');
+            snap.push('left');
+            break;
+        case STAGE_ALIGNMENT.BOTTOM_RIGHT:
+            util.target.setXY(stageWidth, 0 - stageHeight);
+            snap.push('bottom');
+            snap.push('right');
+            break;
         }
         const drawableID = util.target.drawableID;
         const drawable = this.runtime.renderer._allDrawables[drawableID];
         const boundingBox = drawable._skin.getFenceBounds(drawable);
         snap.forEach(side => {
             switch (side) {
-                case 'top':
-                    util.target.setXY(util.target.x, boundingBox.bottom);
-                    break;
-                case 'bottom':
-                    util.target.setXY(util.target.x, boundingBox.top);
-                    break;
-                case 'left':
-                    util.target.setXY(boundingBox.right, util.target.y);
-                    break;
-                case 'right':
-                    util.target.setXY(boundingBox.left, util.target.y);
-                    break;
+            case 'top':
+                util.target.setXY(util.target.x, boundingBox.bottom);
+                break;
+            case 'bottom':
+                util.target.setXY(util.target.x, boundingBox.top);
+                break;
+            case 'left':
+                util.target.setXY(boundingBox.right, util.target.y);
+                break;
+            case 'right':
+                util.target.setXY(boundingBox.left, util.target.y);
+                break;
             }
         });
     }
@@ -237,7 +237,7 @@ class Scratch3MotionBlocks {
         const center = {
             x: Cast.toNumber(args.X),
             y: Cast.toNumber(args.Y)
-        }
+        };
         const radians = (Math.PI * degrees) / 180;
         const cos = Math.cos(radians);
         const sin = Math.sin(radians);
@@ -246,7 +246,7 @@ class Scratch3MotionBlocks {
         const newPosition = {
             x: (cos * dx) - (sin * dy) + center.x,
             y: (cos * dy) + (sin * dx) + center.y
-        }
+        };
         util.target.setXY(newPosition.x, newPosition.y);
     }
 
@@ -264,8 +264,8 @@ class Scratch3MotionBlocks {
     }
 
     pointTowardsXY (args, util) {
-        let targetX = Cast.toNumber(args.X);
-        let targetY = Cast.toNumber(args.Y);
+        const targetX = Cast.toNumber(args.X);
+        const targetY = Cast.toNumber(args.Y);
 
         const dx = targetX - util.target.x;
         const dy = targetY - util.target.y;
@@ -421,16 +421,16 @@ class Scratch3MotionBlocks {
             let distx;
             let disty;
             switch (sides[i]) {
-                case 'left':
-                case 'right':
-                    distx = x - bounds[sides[i]];
-                    disty = y - target.y;
-                    break;
-                case 'top':
-                case 'bottom':
-                    distx = x - target.x;
-                    disty = y - bounds[sides[i]];
-                    break;
+            case 'left':
+            case 'right':
+                distx = x - bounds[sides[i]];
+                disty = y - target.y;
+                break;
+            case 'top':
+            case 'bottom':
+                distx = x - target.x;
+                disty = y - bounds[sides[i]];
+                break;
             }
             const distance = Math.sqrt((distx * distx) + (disty * disty));
             if (distance < minDist) {
@@ -468,14 +468,14 @@ class Scratch3MotionBlocks {
             const x = Math.round(stageWidth * (Math.random() - 0.5));
             const y = Math.round(stageHeight * (Math.random() - 0.5));
             return this.ifOnXYBounce({ X: x, Y: y }, util);
-        } else {
-            const spriteName = Cast.toString(args.SPRITE);
-            const bounceTarget = this.runtime.getSpriteTargetByName(spriteName);
-            if (!bounceTarget) return;
-            const point = util.target.spriteTouchingPoint(spriteName);
-            if (!point) return;
-            return this.ifOnXYBounce({ X: point[0], Y: point[1] }, util);
-        }
+        } 
+        const spriteName = Cast.toString(args.SPRITE);
+        const bounceTarget = this.runtime.getSpriteTargetByName(spriteName);
+        if (!bounceTarget) return;
+        const point = util.target.spriteTouchingPoint(spriteName);
+        if (!point) return;
+        return this.ifOnXYBounce({ X: point[0], Y: point[1] }, util);
+        
     }
 
     setRotationStyle (args, util) {

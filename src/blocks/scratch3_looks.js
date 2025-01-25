@@ -371,6 +371,7 @@ class Scratch3LooksBlocks {
             looks_setstretchto: this.stretchSet,
             looks_gotofrontback: this.goToFrontBack,
             looks_goforwardbackwardlayers: this.goForwardBackwardLayers,
+            looks_goTargetLayer: this.goTargetLayer,
             looks_layersSetLayer: this.setSpriteLayer,
             looks_layersGetLayer: this.getSpriteLayer,
             looks_size: this.getSize,
@@ -386,6 +387,8 @@ class Scratch3LooksBlocks {
             looks_changeVisibilityOfSpriteHide: this.hideSprite,
             looks_stoptalking: this.stopTalking,
             looks_getinputofcostume: this.getCostumeValue,
+            looks_tintColor: this.getTintColor,
+            looks_setTintColor: this.setTintColor
         };
     }
 
@@ -448,10 +451,9 @@ class Scratch3LooksBlocks {
         );
     }
     setColor (args, util) {
-        const numColor = Cast.toNumber(args.color);
+        const numColor = Number(args.color);
         if (!isNaN(numColor)) {
-            args.color = Color.decimalToRgb(numColor);
-            args.color = `rgba(${args.color.r}, ${args.color.g}, ${args.color.b}, ${args.color.a / 255})`;
+            args.color = Color.decimalToHex(numColor);
         }
         this._setBubbleProperty(
             util.target,
@@ -479,6 +481,38 @@ class Scratch3LooksBlocks {
             looks_size: {
                 isSpriteSpecific: true,
                 getId: targetId => `${targetId}_size`
+            },
+            looks_stretchGetX: {
+                isSpriteSpecific: true,
+                getId: targetId => `${targetId}_stretchX`
+            },
+            looks_stretchGetY: {
+                isSpriteSpecific: true,
+                getId: targetId => `${targetId}_stretchY`
+            },
+            looks_sayWidth: {
+                isSpriteSpecific: true,
+                getId: targetId => `${targetId}_sayWidth`
+            },
+            looks_sayHeight: {
+                isSpriteSpecific: true,
+                getId: targetId => `${targetId}_sayHeight`
+            },
+            looks_getEffectValue: {
+                isSpriteSpecific: true,
+                getId: (targetId, fields) => getMonitorIdForBlockWithArgs(`${targetId}_getEffectValue`, fields)
+            },
+            looks_tintColor: {
+                isSpriteSpecific: true,
+                getId: targetId => `${targetId}_tintColor`
+            },
+            looks_getSpriteVisible: {
+                isSpriteSpecific: true,
+                getId: targetId => `${targetId}_getSpriteVisible`
+            },
+            looks_layersGetLayer: {
+                isSpriteSpecific: true,
+                getId: targetId => `${targetId}_layersGetLayer`
             },
             looks_costumenumbername: {
                 isSpriteSpecific: true,
@@ -598,6 +632,17 @@ class Scratch3LooksBlocks {
         if (!effects.hasOwnProperty(effect)) return 0;
         const value = Cast.toNumber(effects[effect]);
         return value;
+    }
+
+    getTintColor (_, util) {
+        const effects = util.target.effects;
+        if (typeof effects.tintColor !== 'number') return '#ffffff';
+        return Color.decimalToHex(effects.tintColor - 1);
+    }
+    setTintColor (args, util) { // used by compiler
+        const rgb = Cast.toRgbColorObject(args.color);
+        const decimal = Color.rgbToDecimal(rgb);
+        util.target.setEffect("tintColor", decimal + 1);
     }
 
     /**
@@ -863,6 +908,21 @@ class Scratch3LooksBlocks {
                 util.target.goForwardLayers(Cast.toNumber(args.NUM));
             } else {
                 util.target.goBackwardLayers(Cast.toNumber(args.NUM));
+            }
+        }
+    }
+
+    goTargetLayer (args, util) {
+        let target;
+        const option = args.VISIBLE_OPTION;
+        if (option === '_stage_') target = this.runtime.getTargetForStage();
+        else target = this.runtime.getSpriteTargetByName(option);
+        if (!util.target.isStage && target) {
+            if (args.FORWARD_BACKWARD === 'infront') {
+                util.target.goBehindOther(target);
+                util.target.goForwardLayers(1);
+            } else {
+                util.target.goBehindOther(target);
             }
         }
     }

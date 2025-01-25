@@ -1,7 +1,12 @@
 const BlockType = require('../../extension-support/block-type');
+const BlockShape = require('../../extension-support/block-shape');
 const ArgumentType = require('../../extension-support/argument-type');
+const ArgumentAlignment = require('../../extension-support/argument-alignment');
 const Cast = require('../../util/cast');
 const MathUtil = require('../../util/math-util');
+const test_indicator = require('./test_indicator.png');
+
+const pathToMedia = 'static/blocks-media';
 
 /**
  * Class for Dev blocks
@@ -19,7 +24,6 @@ class JgDevBlocks {
     }
 
     // util
-
 
 
     /**
@@ -46,7 +50,7 @@ class JgDevBlocks {
                     blockType: BlockType.COMMAND,
                     arguments: {
                         ID: { type: ArgumentType.SOUND, defaultValue: "name or index" },
-                        SEX: { type: ArgumentType.NUMBER, defaultValue: 0 },
+                        SEX: { type: ArgumentType.NUMBER, defaultValue: 0 }
                     }
                 },
                 {
@@ -55,7 +59,7 @@ class JgDevBlocks {
                     blockType: BlockType.COMMAND,
                     arguments: {
                         ID: { type: ArgumentType.SOUND, defaultValue: "sound to set fade out effect on" },
-                        SEX: { type: ArgumentType.NUMBER, defaultValue: 1 },
+                        SEX: { type: ArgumentType.NUMBER, defaultValue: 1 }
                     }
                 },
                 {
@@ -85,12 +89,20 @@ class JgDevBlocks {
                     }
                 },
                 {
+                    opcode: 'logArgs4',
+                    text: 'color input [INPUT]',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        INPUT: { type: ArgumentType.COLOR }
+                    }
+                },
+                {
                     opcode: 'setEffectName',
                     text: 'set [EFFECT] to [VALUE]',
                     blockType: BlockType.COMMAND,
                     arguments: {
                         EFFECT: { type: ArgumentType.STRING, defaultValue: "color" },
-                        VALUE: { type: ArgumentType.NUMBER, defaultValue: 0 },
+                        VALUE: { type: ArgumentType.NUMBER, defaultValue: 0 }
                     }
                 },
                 {
@@ -99,6 +111,18 @@ class JgDevBlocks {
                     blockType: BlockType.COMMAND,
                     arguments: {
                         PX: { type: ArgumentType.NUMBER, defaultValue: 0 }
+                    }
+                },
+                {
+                    opcode: 'restartFromTheTop',
+                    text: 'restart from the top [ICON]',
+                    blockType: BlockType.COMMAND,
+                    isTerminal: true,
+                    arguments: {
+                        ICON: {
+                            type: ArgumentType.IMAGE,
+                            dataURI: pathToMedia + "/repeat.svg"
+                        }
                     }
                 },
                 {
@@ -131,7 +155,7 @@ class JgDevBlocks {
                 },
                 {
                     opcode: 'compiledIfNot',
-                    text: 'if not [CONDITION] then',
+                    text: 'if not [CONDITION] then (compiled)',
                     branchCount: 1,
                     blockType: BlockType.CONDITIONAL,
                     arguments: {
@@ -159,15 +183,162 @@ class JgDevBlocks {
                     branchCount: 1,
                     blockType: BlockType.CONDITIONAL
                 },
-                // {
-                //     opcode: 'whatthescallop',
-                //     text: 'bruh',
-                //     branchCount: 85,
-                //     blockType: BlockType.CONDITIONAL
-                // }
+                {
+                    opcode: 'whatthescallop',
+                    text: 'bruh [numtypeableDropdown] [typeableDropdown] overriden: [overridennumtypeableDropdown] [overridentypeableDropdown]',
+                    arguments: {
+                        numtypeableDropdown: {
+                            menu: 'numericTypeableTest'
+                        },
+                        typeableDropdown: {
+                            menu: 'typeableTest'
+                        },
+                        overridennumtypeableDropdown: {
+                            menu: 'numericTypeableTest',
+                            defaultValue: 5
+                        },
+                        overridentypeableDropdown: {
+                            menu: 'typeableTest',
+                            defaultValue: 'your mom'
+                        }
+                    },
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'booleanMonitor',
+                    text: 'boolean monitor',
+                    blockType: BlockType.BOOLEAN
+                },
+                {
+                    opcode: 'ifFalseReturned',
+                    text: 'if [INPUT] is false (return)',
+                    branchCount: 1,
+                    blockType: BlockType.CONDITIONAL,
+                    arguments: {
+                        INPUT: { type: ArgumentType.BOOLEAN }
+                    }
+                },
+                {
+                    opcode: 'turbrowaorploop',
+                    blockType: BlockType.LOOP,
+                    text: 'my repeat [TIMES]',
+                    arguments: {
+                        TIMES: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 10
+                        }
+                    }
+                },
+                {
+                    opcode: 'alignmentTestate',
+                    blockType: BlockType.CONDITIONAL,
+                    text: [
+                        'this block tests alignments',
+                        'left',
+                        'middle',
+                        'right'
+                    ],
+                    alignments: [
+                        null,
+                        null,
+                        ArgumentAlignment.LEFT,
+                        null,
+                        ArgumentAlignment.CENTER,
+                        null,
+                        ArgumentAlignment.RIGHT
+                    ],
+                    branchCount: 3
+                },
+                {
+                    opcode: 'squareReporter',
+                    text: 'square boy',
+                    blockType: BlockType.REPORTER,
+                    blockShape: BlockShape.SQUARE
+                },
+                {
+                    opcode: 'branchIndicatorTest',
+                    text: 'this has a custom branchIndicator',
+                    branchCount: 1,
+                    blockType: BlockType.CONDITIONAL,
+                    branchIndicator: test_indicator
+                },
+                {
+                    opcode: 'givesAnError',
+                    text: 'throw an error',
+                    blockType: BlockType.COMMAND
+                },
+                {
+                    opcode: 'hiddenBoolean',
+                    text: 'im actually a boolean output',
+                    blockType: BlockType.REPORTER,
+                    forceOutputType: 'Boolean',
+                    disableMonitor: true
+                },
+                {
+                    opcode: 'varvarvavvarvarvar',
+                    text: 'varibles!?!?!??!?!?!?!?!!!?!?! [variable]',
+                    arguments: {
+                        variable: {
+                            menu: 'variableInternal'
+                        }
+                    },
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'green',
+                    text: 'im literally just green',
+                    blockType: BlockType.REPORTER,
+                    color1: '#00ff00',
+                    color2: '#000000',
+                    color3: '#000000',
+                    disableMonitor: true
+                },
+                {
+                    opcode: 'duplicato',
+                    text: 'duplicato',
+                    blockType: BlockType.REPORTER,
+                    canDragDuplicate: true,
+                    disableMonitor: true,
+                    hideFromPalette: true
+                },
+                {
+                    opcode: 'theheheuoihew9h9',
+                    blockType: BlockType.COMMAND,
+                    text: 'This block will appear in the penguinmod wiki [SEP] [DUPLIC]',
+                    arguments: {
+                        SEP: {
+                            type: ArgumentType.SEPERATOR,
+                        },
+                        DUPLIC: {
+                            type: ArgumentType.STRING,
+                            fillIn: 'duplicato',
+                        }
+                    }
+                },
             ],
             menus: {
+                variableInternal: {
+                    variableType: 'scalar'
+                },
                 variable: "getVariablesMenu",
+                numericTypeableTest: {
+                    items: [
+                        'item1',
+                        'item2',
+                        'item3'
+                    ],
+                    isTypeable: true,
+                    isNumeric: true
+                },
+                typeableTest: {
+                    items: [
+                        'item1',
+                        'item2',
+                        'item3'
+                    ],
+                    isTypeable: true,
+                    isNumeric: false
+                }
             }
         };
     }
@@ -190,9 +361,12 @@ class JgDevBlocks {
                     kind: 'stack',
                     return: generator.descendInputOfBlock(block, 'RETURN')
                 }),
+                restartFromTheTop: () => ({
+                    kind: 'stack'
+                }),
                 compiledOutput: () => ({
                     kind: 'input' /* input is output :troll: (it makes sense in the ir & jsgen implementation ok) */
-                }),
+                })
             },
             js: {
                 compiledIfNot: (node, compiler, imports) => {
@@ -209,12 +383,20 @@ class JgDevBlocks {
                 compiledReturn: (node, compiler) => {
                     compiler.source += `return ${compiler.descendInput(node.return).asString()};`;
                 },
+                restartFromTheTop: (_, compiler) => {
+                    compiler.source += `runtime._restartThread(thread);`;
+                    compiler.source += `return;`;
+                },
                 compiledOutput: (_, compiler, imports) => {
                     const code = Cast.toString(compiler.source);
                     return new imports.TypedInput(JSON.stringify(code), imports.TYPE_STRING);
                 }
             }
-        }
+        };
+    }
+
+    varvarvavvarvarvar(args) {
+        return JSON.stringify(args);
     }
 
     // menu
@@ -225,14 +407,18 @@ class JgDevBlocks {
         if (!target) return emptyMenu;
         if (!target.variables) return emptyMenu;
         const menu = Object.getOwnPropertyNames(target.variables).map(variableId => {
-            const variable = target.variables[variableId]
+            const variable = target.variables[variableId];
             return {
                 text: variable.name,
-                value: variable.name,
-            }
+                value: variable.name
+            };
         });
         // check if menu has 0 items because pm throws an error if theres no items
         return (menu.length > 0) ? menu : emptyMenu;
+    }
+
+    branchIndicatorTest() {
+        return; // dude logs wont shut up because i didnt define this func
     }
 
     // util
@@ -260,7 +446,6 @@ class JgDevBlocks {
     }
 
 
-
     _getSoundIndexByName(soundName, util) {
         const sounds = util.target.sprite.sounds;
         for (let i = 0; i < sounds.length; i++) {
@@ -275,15 +460,18 @@ class JgDevBlocks {
     // blocks
 
     branchNewThread(_, util) {
-        const currentBlockId = util.thread.peekStack();
-        const branchBlock = util.thread.target.blocks.getBranch(
-            currentBlockId,
-            0
-        );
-
-        if (branchBlock) {
-            util.sequencer.runtime._pushThread(branchBlock, util.target, {});
+        // CubesterYT probably
+        if (util.thread.target.blocks.getBranch(util.thread.peekStack(), 0)) {
+            util.sequencer.runtime._pushThread(
+                util.thread.target.blocks.getBranch(util.thread.peekStack(), 0),
+                util.target,
+                {}
+            );
         }
+    }
+
+    booleanMonitor() {
+        return Math.round(Math.random()) == 1;
     }
 
     stopSound(args, util) {
@@ -291,7 +479,7 @@ class JgDevBlocks {
         const sprite = target.sprite;
         if (!sprite) return;
 
-        const soundBank = sprite.soundBank
+        const soundBank = sprite.soundBank;
         if (!soundBank) return;
 
         const id = Cast.toString(args.ID);
@@ -309,7 +497,7 @@ class JgDevBlocks {
 
         const { soundId } = sprite.sounds[index];
 
-        const soundBank = sprite.soundBank
+        const soundBank = sprite.soundBank;
         if (!soundBank) return;
 
         soundBank.playSound(target, soundId, Cast.toNumber(args.SEX));
@@ -326,45 +514,68 @@ class JgDevBlocks {
 
         const { soundId } = sprite.sounds[index];
 
-        const soundBank = sprite.soundBank
+        const soundBank = sprite.soundBank;
         if (!soundBank) return;
 
         soundBank.soundPlayers[soundId].stopFadeDecay = Cast.toNumber(args.SEX);
     }
 
+    green() {
+        return 'g';
+    }
+
     logArgs1(args) {
-        console.log(args)
-        return JSON.stringify(args)
+        console.log(args);
+        return JSON.stringify(args);
     }
     logArgs2(args) {
-        console.log(args)
-        return JSON.stringify(args)
+        console.log(args);
+        return JSON.stringify(args);
     }
     logArgs3(args) {
-        console.log(args)
-        return JSON.stringify(args)
+        console.log(args);
+        return JSON.stringify(args);
+    }
+    logArgs4(args) {
+        console.log(args);
+        return JSON.stringify(args);
     }
 
     setEffectName(args, util) {
-        const PX = Cast.toNumber(args.VALUE)
-        util.target.setEffect(args.EFFECT, PX)
+        const PX = Cast.toNumber(args.VALUE);
+        util.target.setEffect(args.EFFECT, PX);
     }
     setBlurEffect(args, util) {
-        const PX = Cast.toNumber(args.PX)
-        util.target.setEffect("blur", PX)
+        const PX = Cast.toNumber(args.PX);
+        util.target.setEffect("blur", PX);
     }
 
     doodooBlockLolol(args, util) {
-        if (args.INPUT === true) return
-        console.log(args, util)
-        util.startBranch(1, false)
-        console.log(util.target.getCurrentCostume())
+        if (args.INPUT === true) return;
+        console.log(args, util);
+        util.startBranch(1, false);
+        console.log(util.target.getCurrentCostume());
     }
 
     ifFalse(args, util) {
-        console.log(args, util)
+        console.log(args, util);
         if (!args.INPUT) {
-            util.startBranch(1, false)
+            util.startBranch(1, false);
+        }
+    }
+    ifFalseReturned(args) {
+        if (!args.INPUT) {
+            return 1;
+        }
+    }
+    turbrowaorploop ({TIMES}, util) {
+        const times = Math.round(Cast.toNumber(TIMES));
+        if (typeof util.stackFrame.loopCounter === 'undefined') {
+            util.stackFrame.loopCounter = times;
+        }
+        util.stackFrame.loopCounter--;
+        if (util.stackFrame.loopCounter >= 0) {
+            return true;
         }
     }
     // compiled blocks should have interpreter versions
@@ -377,8 +588,15 @@ class JgDevBlocks {
     compiledReturn() {
         return 'noop';
     }
+    restartFromTheTop() {
+        return 'noop';
+    }
     compiledOutput() {
         return '<unavailable without compiler>';
+    }
+
+    hiddenBoolean() {
+        return true;
     }
 
     multiplyTest(args, util) {
@@ -386,7 +604,7 @@ class JgDevBlocks {
         Object.getOwnPropertyNames(target.variables).forEach(variableId => {
             const variable = target.variables[variableId];
             if (variable.name !== Cast.toString(args.VAR)) return;
-            console.log(variable)
+            console.log(variable);
             if (typeof variable.value !== 'number') {
                 variable.value = 0;
             }
@@ -394,10 +612,18 @@ class JgDevBlocks {
         });
     }
 
-    whatthescallop(_, util) {
-        for (let i = 0; i < 85; i++) {
-            util.startBranch(i + 1, false)
-        }
+    whatthescallop(args) {
+        return JSON.stringify(args);
+    }
+
+    squareReporter() {
+        return 0;
+    }
+    alignmentTestate() {
+        return;
+    }
+    givesAnError() {
+        throw new Error('woah an error');
     }
 }
 

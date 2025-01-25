@@ -13,7 +13,13 @@ class Scratch3ControlBlocks {
          * The "counter" block value. For compatibility with 2.0.
          * @type {number}
          */
-        this._counter = 0;
+        this._counter = 0; // used by compiler
+
+        /**
+         * The "error" block value.
+         * @type {string}
+         */
+        this._error = ''; // used by compiler
 
         this.runtime.on('RUNTIME_DISPOSED', this.clearCounter.bind(this));
     }
@@ -30,6 +36,7 @@ class Scratch3ControlBlocks {
             control_for_each: this.forEach,
             control_forever: this.forever,
             control_wait: this.wait,
+            control_repeatForSeconds: this.repeatForSeconds,
             control_waittick: this.waitTick,
             control_waitsecondsoruntil: this.waitOrUntil,
             control_wait_until: this.waitUntil,
@@ -60,12 +67,30 @@ class Scratch3ControlBlocks {
         };
     }
 
-    backToGreenFlag () {
-        this.runtime.greenFlag();
+    backToGreenFlag(_, util) {
+        const thisThread = util.thread.topBlock;
+        this.runtime.emit("PROJECT_START_BEFORE_RESET");
+        this.runtime.threads
+            .filter(thread => thread.topBlock !== thisThread)
+            .forEach(thread => thread.stopThisScript());
+        // green flag behaviour
+        this.runtime.emit("PROJECT_START");
+        this.runtime.updateCurrentMSecs();
+        this.runtime.ioDevices.clock.resetProjectTimer();
+        this.runtime.targets.forEach(target => target.clearEdgeActivatedValues());
+        for (let i = this.runtime.targets.length - 1; i >= 0; i--) {
+            const thisTarget = this.runtime.targets[i];
+            thisTarget.onGreenFlag();
+            if (!thisTarget.isOriginal) {
+                this.runtime.disposeTarget(thisTarget);
+                this.runtime.stopForTarget(thisTarget);
+            }
+        }
+        this.runtime.startHats("event_whenflagclicked");
     }
 
     if_return_else_return (args) {
-        return args.boolean ? args.TEXT1 : args.TEXT2;
+        return Cast.toBoolean(args.boolean) ? args.TEXT1 : args.TEXT2;
     }
 
     getHats () {
@@ -77,12 +102,12 @@ class Scratch3ControlBlocks {
     }
 
     runJavascript(args) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const js = Cast.toString(args.JS);
             SandboxRunner.execute(js).then(result => {
-                resolve(result.value)
-            })
-        })
+                resolve(result.value);
+            });
+        });
     }
 
     repeat (args, util) {
@@ -152,6 +177,20 @@ class Scratch3ControlBlocks {
             this.runtime.requestRedraw();
             util.yield();
         } else if (!util.stackTimerFinished()) {
+            util.yield();
+        }
+    }
+    
+    repeatForSeconds (args, util) {
+        if (util.stackTimerNeedsInit()) {
+            const duration = Math.max(0, 1000 * Cast.toNumber(args.TIMES));
+
+            util.startStackTimer(duration);
+            this.runtime.requestRedraw();
+            util.startBranch(1, true);
+            util.yield();
+        } else if (!util.stackTimerFinished()) {
+            util.startBranch(1, true);
             util.yield();
         }
     }

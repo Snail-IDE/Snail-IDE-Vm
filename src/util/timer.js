@@ -25,6 +25,11 @@ class Timer {
          * which is sometimes useful for compatibility with Scratch 2
          */
         this.nowObj = nowObj;
+
+        /**
+         * Detirmins if this timer is paused or not
+         */
+        this._pausedTime = null;
     }
 
     /**
@@ -87,8 +92,27 @@ class Timer {
         this.startTime = this.nowObj.now();
     }
 
+    /**
+     * pause the timer
+     */
+    pause() {
+        if (this._pausedTime) return;
+        this._pausedTime = this.timeElapsed();
+    }
+
+    /**
+     * unpause the timer
+     */
+    play() {
+        if (!this._pausedTime) return;
+        this.startTime = this.nowObj.now() - this._pausedTime;
+        this._pausedTime = null;
+    }
+
     timeElapsed () {
-        return this.nowObj.now() - this.startTime;
+        if (this._pausedTime) return this._pausedTime;
+        const now = this.nowObj.now();
+        return now - this.startTime;
     }
 
     /**

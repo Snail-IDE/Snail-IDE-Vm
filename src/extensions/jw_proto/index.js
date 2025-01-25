@@ -13,6 +13,8 @@ class jwProto {
          * @type {Runtime}
          */
         this.runtime = runtime;
+        // register compiled blocks
+        this.runtime.registerCompiledExtensionBlocks('jwProto', this.getCompileInfo());
     }
 
     /**
@@ -22,16 +24,18 @@ class jwProto {
         return {
             autoLoad: true,
             id: 'jwProto',
-            name: 'Labels', // change this back if you update the extension to have more things
+            // ok at this point, just make a new extension if you add more stuff
+            // its been so long that it just wouldnt make sense for this to have other stuff
+            name: 'Labels',
             // blockIconURI: blockIconURI,
-            color1: '#ffdc7a',
-            color2: '#ffd45e',
+            color1: '#969696',
+            color2: '#6e6e6e',
             blocks: [
                 {
                     opcode: 'labelHat',
                     text: formatMessage({
                         id: 'jwProto.blocks.labelHat',
-                        default: 'label [LABEL]',
+                        default: '// [LABEL]',
                         description: 'Label for some unused blocks.'
                     }),
                     disableMonitor: true,
@@ -47,13 +51,11 @@ class jwProto {
                     opcode: 'labelFunction',
                     text: formatMessage({
                         id: 'jwProto.blocks.labelFunction',
-                        default: 'label [LABEL]',
+                        default: '// [LABEL]',
                         description: 'Label for some blocks.'
                     }),
-                    disableMonitor: true,
                     blockType: BlockType.COMMAND,
                     branchCount: 1,
-                    hideFromPalette: true,
                     arguments: {
                         LABEL: {
                             type: ArgumentType.STRING,
@@ -65,7 +67,7 @@ class jwProto {
                     opcode: 'labelCommand',
                     text: formatMessage({
                         id: 'jwProto.blocks.labelCommand',
-                        default: 'label [LABEL]',
+                        default: '// [LABEL]',
                         description: 'Label for labeling.'
                     }),
                     disableMonitor: true,
@@ -81,7 +83,7 @@ class jwProto {
                     opcode: 'labelReporter',
                     text: formatMessage({
                         id: 'jwProto.blocks.labelReporter',
-                        default: 'label [LABEL] [VALUE]',
+                        default: '[VALUE] // [LABEL]',
                         description: 'Label for a value.'
                     }),
                     disableMonitor: true,
@@ -101,7 +103,7 @@ class jwProto {
                     opcode: 'labelBoolean',
                     text: formatMessage({
                         id: 'jwProto.blocks.labelBoolean',
-                        default: 'label [LABEL] [VALUE]',
+                        default: '[VALUE] // [LABEL]',
                         description: 'Label for a boolean.'
                     }),
                     disableMonitor: true,
@@ -115,24 +117,89 @@ class jwProto {
                             type: ArgumentType.BOOLEAN
                         }
                     }
-                }
+                },
+                {
+                    blockType: BlockType.LABEL,
+                    text: "Placeholders"
+                },
+                {
+                    opcode: 'placeholderCommand',
+                    text: formatMessage({
+                        id: 'jwProto.blocks.placeholderCommand',
+                        default: '...',
+                        description: 'Placeholder for stack blocks.'
+                    }),
+                    blockType: BlockType.COMMAND
+                },
+                {
+                    opcode: 'placeholderReporter',
+                    text: formatMessage({
+                        id: 'jwProto.blocks.placeholderReporter',
+                        default: '...',
+                        description: 'Placeholder for a value.'
+                    }),
+                    disableMonitor: true,
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'placeholderBoolean',
+                    text: formatMessage({
+                        id: 'jwProto.blocks.placeholderBoolean',
+                        default: '...',
+                        description: 'Placeholder for a boolean.'
+                    }),
+                    disableMonitor: true,
+                    blockType: BlockType.BOOLEAN
+                },
             ]
+        };
+    }
+    /**
+     * This function is used for any compiled blocks in the extension if they exist.
+     * Data in this function is given to the IR & JS generators.
+     * Data must be valid otherwise errors may occur.
+     * @returns {object} functions that create data for compiled blocks.
+     */
+    getCompileInfo() {
+        return {
+            ir: {
+                labelFunction: (generator, block) => ({
+                    kind: 'stack',
+                    branch: generator.descendSubstack(block, 'SUBSTACK')
+                })
+            },
+            js: {
+                labelFunction: (node, compiler, imports) => {
+                    compiler.descendStack(node.branch, new imports.Frame(false));
+                }
+            }
         };
     }
 
     labelHat() {
         return false;
     }
-    labelFunction(args) {
-        args.substack1();
+    labelFunction(_, util) {
+        util.startBranch(1, false);
     }
     labelCommand() {
+        return;
     }
     labelReporter(args) {
         return args.VALUE;
     }
     labelBoolean(args) {
         return args.VALUE;
+    }
+
+    placeholderCommand() {
+        return;
+    }
+    placeholderReporter() {
+        return '';
+    }
+    placeholderBoolean() {
+        return false;
     }
 }
 

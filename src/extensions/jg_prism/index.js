@@ -10,6 +10,9 @@ const beatgammit = {
 const {
     validateArray
 } = require('../../util/json-block-utilities');
+const ArrayBufferUtil = require('../../util/array buffer');
+const BufferParser = new ArrayBufferUtil();
+const Cast = require('../../util/cast');
 // const Cast = require('../../util/cast');
 
 const warningIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAC8SURBVDhPpZPBDYMwDEWhJw4MQzdgG0bi0APDlHuPZRv6X2xUaqJWpE8y2Pk/JkRJFVnXtVOMiqdig5yxzm1HJDZu+gWexqcZDCjuqHtcRo/gfTdRkf2yy7kGMG4i/5wlGYSXObqL9MFsRQw06C0voq9ZhxcHasH7m4cV/AUNFkuLWGgwW17EzB5wPB9Wn+aanmoysVGRJAovI5PLydAqzh7l1mWDAUV2JQE8n5P3SORo3xTxOjMWrnNVvQChGZRpEqnWPQAAAABJRU5ErkJggg==";
@@ -212,7 +215,7 @@ class JgPrismBlocks {
                     opcode: 'dataUriOfCostume',
                     text: formatMessage({
                         id: 'jgRuntime.blocks.dataUriOfCostume',
-                        default: 'data uri of costume #[INDEX]',
+                        default: 'data url of costume #[INDEX]',
                         description: 'Block that returns a Data URI of the costume at the index.'
                     }),
                     blockType: BlockType.REPORTER,
@@ -230,8 +233,8 @@ class JgPrismBlocks {
                     opcode: 'dataUriFromImageUrl',
                     text: formatMessage({
                         id: 'jgRuntime.blocks.dataUriFromImageUrl',
-                        default: 'data uri of image at url: [URL]',
-                        description: 'Block that returns a Data URI of the costume at the index.'
+                        default: 'data url of image at url: [URL]',
+                        description: 'Block that returns a Data URI of the content fetched from the URL.'
                     }),
                     blockType: BlockType.REPORTER,
                     disableMonitor: true,
@@ -241,6 +244,38 @@ class JgPrismBlocks {
                         URL: {
                             type: ArgumentType.STRING,
                             defaultValue: "url"
+                        }
+                    }
+                },
+                {
+                    opcode: 'dataUriFromArrayBuffer',
+                    text: formatMessage({
+                        id: 'jgRuntime.blocks.dataUriFromArrayBuffer',
+                        default: 'convert array buffer [BUFFER] to data url',
+                        description: 'Block that returns a Data URI from an array buffer.'
+                    }),
+                    blockType: BlockType.REPORTER,
+                    disableMonitor: true,
+                    arguments: {
+                        BUFFER: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "[72,101,108,108,111]"
+                        }
+                    }
+                },
+                {
+                    opcode: 'arrayBufferFromDataUri',
+                    text: formatMessage({
+                        id: 'jgRuntime.blocks.arrayBufferFromDataUri',
+                        default: 'convert data url [URL] to array buffer',
+                        description: 'Block that returns an array buffer from a Data URL.'
+                    }),
+                    blockType: BlockType.REPORTER,
+                    disableMonitor: true,
+                    arguments: {
+                        URL: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "data:text/plain;base64,SGVsbG8="
                         }
                     }
                 },
@@ -662,6 +697,36 @@ class JgPrismBlocks {
                 });
         });
     }
+
+    dataUriFromArrayBuffer(args) {
+        const array = validateArray(args.BUFFER);
+        if (!array.isValid) return 'data:text/plain;base64,';
+        const buffer = BufferParser.arrayToBuffer(array.array);
+        let binary = '';
+        let bytes = new Uint8Array(buffer);
+        let len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        // use "application/octet-stream", we have no idea what the buffer actually contains
+        return `data:application/octet-stream;base64,${btoa(binary)}`;
+    }
+    arrayBufferFromDataUri(args) {
+        const dataUrl = Cast.toString(args.URL);
+        return new Promise((resolve) => {
+            fetch(dataUrl).then(res => {
+                res.arrayBuffer().then(buffer => {
+                    const array = BufferParser.bufferToArray(buffer);
+                    resolve(JSON.stringify(array));
+                }).catch(() => {
+                    resolve('[]');
+                });
+            }).catch(() => {
+                resolve('[]');
+            });
+        });
+    }
+
     currentMouseScrollX() {
         return this.mouseScrollDelta.x;
     }

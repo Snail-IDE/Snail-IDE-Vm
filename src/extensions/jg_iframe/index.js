@@ -742,7 +742,6 @@ class JgIframeBlocks {
     }
     showIframeElement() {
         if (!this.GetIFrameState()) return; // iframe doesnt exist, stop
-        console.log("Snail IDE VM Logger: Iframe Loaded!");
         const iframe = this.createdIframe;
         iframe.style.display = "";
     }

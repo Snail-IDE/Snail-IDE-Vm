@@ -78,6 +78,60 @@ class Scratch3TextBlocks {
         return 'Scratch.text';
     }
 
+    _getFonts() {
+        return [{
+            text: 'Sans Serif',
+            value: SANS_SERIF_ID
+        }, {
+            text: 'Serif',
+            value: SERIF_ID
+        }, {
+            text: 'Handwriting',
+            value: HANDWRITING_ID
+        }, {
+            text: 'Marker',
+            value: MARKER_ID
+        }, {
+            text: 'Curly',
+            value: CURLY_ID
+        }, {
+            text: 'Pixel',
+            value: PIXEL_ID
+        }, {
+            text: 'Playful',
+            value: PLAYFUL_ID
+        }, {
+            text: 'Bubbly',
+            value: BUBBLY_ID
+        }, {
+            text: 'Arcade',
+            value: ARCADE_ID
+        }, {
+            text: 'Bits and Bytes',
+            value: BITSANDBYTES_ID
+        }, {
+            text: 'Technological',
+            value: TECHNOLOGICAL_ID
+        }, {
+            text: 'Scratch',
+            value: SCRATCH_ID
+        }, {
+            text: 'Archivo',
+            value: ARCHIVO_ID
+        }, {
+            text: 'Archivo Black',
+            value: ARCHIVOBLACK_ID
+        },
+        ...this.runtime.fontManager.getFonts().map(i => ({
+            text: i.name,
+            value: i.family
+        })),
+        {
+            text: 'random font',
+            value: RANDOM_ID
+        }];
+    }
+
     getInfo () {
         return {
             id: 'text',
@@ -246,56 +300,201 @@ class Scratch3TextBlocks {
                 opcode: 'getHeight',
                 text: 'get height of the text',
                 blockType: BlockType.REPORTER
-            }],
+            },
+            {
+                opcode: "getDisplayedText",
+                blockType: BlockType.REPORTER,
+                text: ("displayed text")
+            },
+            {
+                opcode: "getRender",
+                blockType: BlockType.REPORTER,
+                text: ("get data uri of last rendered text")
+            },
+
+            // TODO: Give these blocks actual functionality.
+            //       Most of them can be done easily.
+
+            // TURBOWARP BLOCKS (added for compatibility reasons)
+            // TURBOWARP BLOCKS (added for compatibility reasons)
+            // TURBOWARP BLOCKS (added for compatibility reasons)
+            // TURBOWARP BLOCKS (added for compatibility reasons)
+            // TURBOWARP BLOCKS (added for compatibility reasons)
+            // TURBOWARP BLOCKS (added for compatibility reasons)
+
+            // TODO: Give these blocks actual functionality.
+            //       Most of them can be done easily.
+
+            {
+                opcode: "setAlignment",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) align text to [ALIGN]"),
+                hideFromPalette: true,
+                arguments: {
+                    ALIGN: {
+                        type: ArgumentType.STRING,
+                        menu: "twAlign"
+                    }
+                }
+            },
+            {
+                // why is the other block called "setWidth" :(
+                opcode: "setWidthValue",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) set width to [WIDTH]"),
+                hideFromPalette: true,
+                arguments: {
+                    WIDTH: {
+                        type: ArgumentType.NUMBER,
+                        defaultValue: 200
+                    }
+                }
+            },
+            {
+                opcode: "resetWidth",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) reset text width"),
+                hideFromPalette: true
+            },
+            "---",
+            {
+                opcode: "getLines",
+                blockType: BlockType.REPORTER,
+                text: ("(NOT USABLE YET) # of lines"),
+                hideFromPalette: true,
+                disableMonitor: true
+            },
+            "---",
+            {
+                opcode: "startAnimate",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) start [ANIMATE] animation"),
+                hideFromPalette: true,
+                arguments: {
+                    ANIMATE: {
+                        type: ArgumentType.STRING,
+                        menu: "twAnimate",
+                        defaultValue: "rainbow"
+                    }
+                }
+            },
+            {
+                opcode: "animateUntilDone",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) animate [ANIMATE] until done"),
+                hideFromPalette: true,
+                arguments: {
+                    ANIMATE: {
+                        type: ArgumentType.STRING,
+                        menu: "twAnimate",
+                        defaultValue: "rainbow"
+                    }
+                }
+            },
+            {
+                opcode: "isAnimating",
+                blockType: BlockType.BOOLEAN,
+                text: ("(NOT USABLE YET) is animating?"),
+                hideFromPalette: true,
+                disableMonitor: true
+            },
+            "---",
+            {
+                opcode: "setAnimateDuration",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) set [ANIMATE] duration to [NUM] seconds"),
+                hideFromPalette: true,
+                arguments: {
+                    ANIMATE: {
+                        type: ArgumentType.STRING,
+                        menu: "twAnimateDuration",
+                        defaultValue: "rainbow"
+                    },
+                    NUM: {
+                        type: ArgumentType.NUMBER,
+                        defaultValue: 3
+                    }
+                }
+            },
+            {
+                opcode: "resetAnimateDuration",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) reset [ANIMATE] duration"),
+                hideFromPalette: true,
+                arguments: {
+                    ANIMATE: {
+                        type: ArgumentType.STRING,
+                        menu: "twAnimateDuration",
+                        defaultValue: "rainbow"
+                    }
+                }
+            },
+            {
+                opcode: "getAnimateDuration",
+                blockType: BlockType.REPORTER,
+                text: ("(NOT USABLE YET) [ANIMATE] duration"),
+                hideFromPalette: true,
+                arguments: {
+                    ANIMATE: {
+                        type: ArgumentType.STRING,
+                        menu: "twAnimateDuration",
+                        defaultValue: "rainbow"
+                    }
+                }
+            },
+            "---",
+            {
+                opcode: "setTypeDelay",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) set typing delay to [NUM] seconds"),
+                hideFromPalette: true,
+                arguments: {
+                    NUM: {
+                        type: ArgumentType.NUMBER,
+                        defaultValue: 0.1
+                    }
+                }
+            },
+            {
+                opcode: "resetTypeDelay",
+                blockType: BlockType.COMMAND,
+                text: ("(NOT USABLE YET) reset typing delay"),
+                hideFromPalette: true
+            },
+            {
+                opcode: "getTypeDelay",
+                blockType: BlockType.REPORTER,
+                text: ("(NOT USABLE YET) typing delay"),
+                hideFromPalette: true,
+                disableMonitor: true
+            },
+            "---",
+            {
+                opcode: "textActive",
+                blockType: BlockType.BOOLEAN,
+                text: ("(TURBOWARP BLOCK) is showing text?"),
+                hideFromPalette: true,
+                disableMonitor: true
+            },
+            {
+                opcode: "getTextAttribute",
+                blockType: BlockType.REPORTER,
+                text: "(NOT USABLE YET) text [ATTRIBUTE]",
+                arguments: {
+                    ATTRIBUTE: {
+                        type: ArgumentType.STRING,
+                        menu: "twAnimate"
+                    }
+                },
+                disableMonitor: true,
+                hideFromPalette: true
+            }
+        
+            ],
             menus: {
                 FONT: {
-                    items: [{
-                        text: 'Sans Serif',
-                        value: SANS_SERIF_ID
-                    }, {
-                        text: 'Serif',
-                        value: SERIF_ID
-                    }, {
-                        text: 'Handwriting',
-                        value: HANDWRITING_ID
-                    }, {
-                        text: 'Marker',
-                        value: MARKER_ID
-                    }, {
-                        text: 'Curly',
-                        value: CURLY_ID
-                    }, {
-                        text: 'Pixel',
-                        value: PIXEL_ID
-                    }, {
-                        text: 'Playful',
-                        value: PLAYFUL_ID
-                    }, {
-                        text: 'Bubbly',
-                        value: BUBBLY_ID
-                    }, {
-                        text: 'Arcade',
-                        value: ARCADE_ID
-                    }, {
-                        text: 'Bits and Bytes',
-                        value: BITSANDBYTES_ID
-                    }, {
-                        text: 'Technological',
-                        value: TECHNOLOGICAL_ID
-                    }, {
-                        text: 'Scratch',
-                        value: SCRATCH_ID
-                    }, {
-                        text: 'Archivo',
-                        value: ARCHIVO_ID
-                    }, {
-                        text: 'Archivo Black',
-                        value: ARCHIVOBLACK_ID
-                    }, {
-                        text: 'random font',
-                        value: RANDOM_ID
-                    }],
-                    acceptReporters: true
+                    items: '_getFonts',
+                    isTypeable: true
                 },
                 ALIGN: {
                     items: [{
@@ -320,6 +519,54 @@ class Scratch3TextBlocks {
                         text: 'zoom',
                         value: 'zoom'
                     }]
+                },
+                // TurboWarp menus (acceptReporters: true)
+                twAnimate: {
+                    acceptReporters: true,
+                    items: [
+                        {
+                            text: ("type"),
+                            value: "type"
+                        },
+                        {
+                            text: ("rainbow"),
+                            value: "rainbow"
+                        },
+                        {
+                            text: ("zoom"),
+                            value: "zoom"
+                        }
+                    ]
+                },
+                twAnimateDuration: {
+                    acceptReporters: true,
+                    items: [
+                        {
+                            text: ("rainbow"),
+                            value: "rainbow"
+                        },
+                        {
+                            text: ("zoom"),
+                            value: "zoom"
+                        }
+                    ]
+                },
+                twAlign: {
+                    acceptReporters: true,
+                    items: [
+                        {
+                            text: ("left"),
+                            value: "left"
+                        },
+                        {
+                            text: ("center"),
+                            value: "center"
+                        },
+                        {
+                            text: ("right"),
+                            value: "right"
+                        }
+                    ]
                 }
             }
         };
@@ -332,9 +579,6 @@ class Scratch3TextBlocks {
         textState.animating = false;
 
         this._renderText(util.target); // Yield until the next tick.
-
-
-        return Promise.resolve();
     }
     clearText (args, util) {
         const target = util.target;
@@ -346,8 +590,6 @@ class Scratch3TextBlocks {
         textState.animating = false;
         const costume = target.getCostumes()[target.currentCostume];
         this.runtime.renderer.updateDrawableSkinId(target.drawableID, costume.skinId); // Yield until the next tick.
-
-        return Promise.resolve();
     }
     stopAll () {
         this.runtime.targets.forEach(target => {
@@ -364,9 +606,6 @@ class Scratch3TextBlocks {
         textState.animating = false;
 
         this._renderText(util.target); // Yield until the next tick.
-
-
-        return Promise.resolve();
     }
     setFont (args, util) {
         const textState = this._getTextState(util.target);
@@ -386,7 +625,7 @@ class Scratch3TextBlocks {
     setColor (args, util) {
         const textState = this._getTextState(util.target);
 
-        textState.color = Color.decimalToHex(args.COLOR);
+        textState.color = Cast.toString(args.COLOR);
 
         this._renderText(util.target);
     }
@@ -423,10 +662,14 @@ class Scratch3TextBlocks {
     setOutlineColor (args, util) {
         const textState = this._getTextState(util.target);
 
-        textState.strokeColor = Color.decimalToHex(args.COLOR);
+        textState.strokeColor = Cast.toString(args.COLOR);
         textState.visible = true;
 
         this._renderText(util.target);
+    }
+
+    textActive (args, util) {
+        return this.getVisible(args, util);
     }
 
     getVisible (args, util) {
@@ -435,22 +678,35 @@ class Scratch3TextBlocks {
         return textState.visible;
     }
 
+    getDisplayedText(args, util) {
+        const textState = this._getTextState(util.target);
+
+        return textState.text;
+    }
+
+    getRender(args, util) {
+        const textSkin = this._getTextSkin(util.target);
+        if (!textSkin) return;
+
+        return textSkin._canvas.toDataURL();
+    }
+
     getWidth (args, util) {
         const textSkin = this._getTextSkin(util.target);
-        if (typeof textSkin.width !== 'number') return 0;
+        if (!textSkin) return 0;
         return textSkin.width;
     }
 
     getHeight (args, util) {
         const textSkin = this._getTextSkin(util.target);
-        if (typeof textSkin.height !== 'number') return 0;
+        if (!textSkin) return 0;
         return textSkin.height;
     }
 
     _getTextSkin (target) {
         const textState = this._getTextState(target);
-        if (!textState) return [0,0];
-        if (!textState.skinId) return [0,0];
+        if (!textState) return;
+        if (!textState.skinId) return;
         const textSkin = this.runtime.renderer._allSkins[textState.skinId];
 
         return textSkin;

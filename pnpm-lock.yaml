@@ -35,6 +35,9 @@ importers:
       diff-match-patch:
         specifier: 1.0.4
         version: 1.0.4
+      dompurify:
+        specifier: ^3.0.9
+        version: 3.2.1
       encoding:
         specifier: ^0.1.13
         version: 0.1.13
@@ -59,6 +62,15 @@ importers:
       localforage:
         specifier: ^1.10.0
         version: 1.10.0
+      lz-string:
+        specifier: ^1.5.0
+        version: 1.5.0
+      mathjs:
+        specifier: 11.11.1
+        version: 11.11.1
+      matter-js:
+        specifier: ^0.20.0
+        version: 0.20.0
       mersenne-twister:
         specifier: ^1.1.0
         version: 1.1.0
@@ -67,10 +79,13 @@ importers:
         version: 3.1.0
       ml5:
         specifier: ^0.12.2
-        version: 0.12.2(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)(encoding@0.1.13)(seedrandom@2.4.4)
+        version: 0.12.2(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)(encoding@0.1.13)(seedrandom@3.0.5)
       pathfinding:
         specifier: ^0.4.18
         version: 0.4.18
+      schema-utils:
+        specifier: ^2.7.1
+        version: 2.7.1
       scratch-parser:
         specifier: git+https://github.com/PenguinMod/PenguinMod-Parser.git#master
         version: https://codeload.github.com/PenguinMod/PenguinMod-Parser/tar.gz/c56c7aad93f71aa5d1a126bae1d5e663c161e8eb
@@ -100,7 +115,7 @@ importers:
         version: 5.4.5
       worker-loader:
         specifier: ^1.1.1
-        version: 1.1.1(webpack@4.46.0(webpack-cli@3.1.0))
+        version: 1.1.1(webpack@4.46.0)
     devDependencies:
       '@babel/core':
         specifier: 7.13.10
@@ -116,7 +131,7 @@ importers:
         version: 10.1.0(eslint@5.3.0)
       babel-loader:
         specifier: 8.2.2
-        version: 8.2.2(@babel/core@7.13.10)(webpack@4.46.0(webpack-cli@3.1.0))
+        version: 8.2.2(@babel/core@7.13.10)(webpack@4.46.0)
       callsite:
         specifier: 1.0.0
         version: 1.0.0
@@ -134,10 +149,10 @@ importers:
         version: 5.1.0(babel-eslint@10.1.0(eslint@5.3.0))(eslint@5.3.0)
       expose-loader:
         specifier: 0.7.5
-        version: 0.7.5(webpack@4.46.0(webpack-cli@3.1.0))
+        version: 0.7.5(webpack@4.46.0)
       file-loader:
         specifier: 2.0.0
-        version: 2.0.0(webpack@4.46.0(webpack-cli@3.1.0))
+        version: 2.0.0(webpack@4.46.0)
       format-message-cli:
         specifier: 6.2.0
         version: 6.2.0
@@ -173,16 +188,16 @@ importers:
         version: 3.14.20220526031602
       scratch-render:
         specifier: 0.1.0-prerelease.20211028200436
-        version: 0.1.0-prerelease.20211028200436(scratch-render-fonts@1.0.0-prerelease.20210401210003)(webpack@4.46.0(webpack-cli@3.1.0))
+        version: 0.1.0-prerelease.20211028200436(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9)(webpack@4.46.0)
       scratch-render-fonts:
-        specifier: 1.0.0-prerelease.20210401210003
-        version: 1.0.0-prerelease.20210401210003
+        specifier: github:PenguinMod/penguinmod-render-fonts#master
+        version: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9
       scratch-storage:
-        specifier: 2.0.2
-        version: 2.0.2(webpack@4.46.0(webpack-cli@3.1.0))
+        specifier: git+https://github.com/PenguinMod/PenguinMod-Storage.git#develop
+        version: https://codeload.github.com/PenguinMod/PenguinMod-Storage/tar.gz/96f45f701dc11648bc88fcc5307193d591afea84(webpack@4.46.0)
       scratch-svg-renderer:
         specifier: 0.2.0-prerelease.20210727023023
-        version: 0.2.0-prerelease.20210727023023(scratch-render-fonts@1.0.0-prerelease.20210401210003)
+        version: 0.2.0-prerelease.20210727023023(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9)
       script-loader:
         specifier: 0.7.2
         version: 0.7.2
@@ -197,7 +212,7 @@ importers:
         version: 2.3.0
       uglifyjs-webpack-plugin:
         specifier: 1.2.7
-        version: 1.2.7(webpack@4.46.0(webpack-cli@3.1.0))
+        version: 1.2.7(webpack@4.46.0)
       webpack:
         specifier: 4.46.0
         version: 4.46.0(webpack-cli@3.1.0)
@@ -206,7 +221,7 @@ importers:
         version: 3.1.0(webpack@4.46.0)
       webpack-dev-server:
         specifier: 3.11.2
-        version: 3.11.2(webpack-cli@3.1.0(webpack@4.46.0))(webpack@4.46.0(webpack-cli@3.1.0))
+        version: 3.11.2(webpack-cli@3.1.0)(webpack@4.46.0)
 
 packages:
 
@@ -924,6 +939,9 @@ packages:
   '@types/seedrandom@2.4.27':
     resolution: {integrity: sha512-YvMLqFak/7rt//lPBtEHv3M4sRNA+HGxrhFZ+DQs9K2IkYJbNwVIb8avtJfhDiuaUBX/AW0jnjv48FV8h3u9bQ==}
 
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+
   '@types/webgl-ext@0.0.30':
     resolution: {integrity: sha512-LKVgNmBxN0BbljJrVUwkxwRYqzsAEPcZOe6S2T6ZaBDIrFp0qu4FNlpc5sM1tGbXUYFgdVQIoeLk1Y1UoblyEg==}
 
@@ -1613,6 +1631,9 @@ packages:
   commondir@1.0.1:
     resolution: {integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==}
 
+  complex.js@2.4.2:
+    resolution: {integrity: sha512-qtx7HRhPGSCBtGiST4/WGHuW+zeaND/6Ld+db6PbrulIB1i2Ev/2UPiqcmpQNPSyfBKraC0EOvOKCB5dGZKt3g==}
+
   component-emitter@1.3.1:
     resolution: {integrity: sha512-T0+barUSQRTUQASh8bx02dl+DhF54GtIDY13Y3m9oWTklKbb3Wv974meRpeZ3lp1JpLVECWWNHC4vaG2XHXouQ==}
 
@@ -1889,6 +1910,9 @@ packages:
     resolution: {integrity: sha512-z2S+W9X73hAUUki+N+9Za2lBlun89zigOyGrsax+KUQ6wKW4ZoWpEYBkGhQjwAjjDCkWxhY0VKEhk8wzY7F5cA==}
     engines: {node: '>=0.10.0'}
 
+  decimal.js@10.4.3:
+    resolution: {integrity: sha512-VBBaLc1MgL5XpzgIP7ny5Z6Nx3UrRkIViUkPUdtl9aya5amy3De1gsUUSB1g3+3sExYNjCAsAznmukyxCb1GRA==}
+
   decode-html@2.0.0:
     resolution: {integrity: sha512-lVJ+EBozhAXA2nSQG+xAgcD0P5K3uejnIIvM09uoQfS8AALkQ+HhHcEUvKovXi0EIpIZWjm0y8X7ULjaJpgY9w==}
 
@@ -2012,6 +2036,9 @@ packages:
   dompurify@2.2.7:
     resolution: {integrity: sha512-jdtDffdGNY+C76jvodNTu9jt5yYj59vuTUyx+wXdzcSwAGTYZDAQkQ7Iwx9zcGrA4ixC1syU4H3RZROqRxokxg==}
 
+  dompurify@3.2.1:
+    resolution: {integrity: sha512-NBHEsc0/kzRYQd+AY6HR6B/IgsqzBABrqJbpCDQII/OK6h7B7LXzweZTDsqSW2LkTRpoxf18YUP+YjGySk6B3w==}
+
   domutils@1.7.0:
     resolution: {integrity: sha512-Lgd2XcJ/NjEw+7tFvfKxOzCYKZsdct5lczQ2ZaQY8Djz7pfAD3Gbp8ySJWtreII/vDlMVmxwa6pHmdxIYgttDg==}
 
@@ -2131,6 +2158,9 @@ packages:
 
   escape-html@1.0.3:
     resolution: {integrity: sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow==}
+
+  escape-latex@1.2.0:
+    resolution: {integrity: sha512-nV5aVWW1K0wEiUIEdZ4erkGGH8mDxGyxSeqPzRNtWP7ataw+/olFObw7hujFWlVjNsaDFw5VZ5NzVSIqRgfTiw==}
 
   escape-string-regexp@1.0.5:
     resolution: {integrity: sha512-vbRorB5FUQWvla16U8R/qgaFIya2qGzwDrNmCZuYKrbdSUMG6I1ZCGQRefkRVhuOkIGVne7BQ35DSfo1qvJqFg==}
@@ -2494,6 +2524,9 @@ packages:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
 
+  fraction.js@4.3.4:
+    resolution: {integrity: sha512-pwiTgt0Q7t+GHZA4yaLjObx4vXmmdcS0iSJ19o8d/goUGgItX9UZWKWNnLHehxviD8wU2IWRsnR8cD5+yOJP2Q==}
+
   fragment-cache@0.2.1:
     resolution: {integrity: sha512-GMBAbW9antB8iZRHLoGw0b3HANt57diZYFO/HL1JGIC1MjKrdmhxvrJbupnVvpys0zsz7yBApXdQyfepKly2kA==}
     engines: {node: '>=0.10.0'}
@@ -2531,7 +2564,7 @@ packages:
     resolution: {integrity: sha512-oWb1Z6mkHIskLzEJ/XWX0srkpkTQ7vaopMQkyaEIoq0fmtFVxOthb8cCxeT+p3ynTdkk/RZwbgG4brR5BeWECw==}
     engines: {node: '>= 4.0'}
     os: [darwin]
-    deprecated: The v1 package contains DANGEROUS / INSECURE binaries. Upgrade to safe fsevents v2
+    deprecated: Upgrade to fsevents v2 to mitigate potential security issues
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -3148,6 +3181,9 @@ packages:
   iterator.prototype@1.1.2:
     resolution: {integrity: sha512-DR33HMMr8EzwuRL8Y9D3u2BMj8+RqSE850jfGu59kS7tbmPLzGkZmVSfyCFSDxuZiEY6Rzt3T2NA/qU+NwVj1w==}
 
+  javascript-natural-sort@0.7.1:
+    resolution: {integrity: sha512-nO6jcEfZWQXDhOiBtG2KvKyEptz7RVbpGP4vTD2hLBdmNQSsCiicO2Ioinv6UI4y9ukqnBpy+XZ9H6uLNgJTlw==}
+
   js-md5@0.7.3:
     resolution: {integrity: sha512-ZC41vPSTLKGwIRjqDh8DfXoCrdQIyBgspJVPXHBGu4nZlAEvG3nf+jO9avM9RmLiGakg7vz974ms99nEV0tmTQ==}
 
@@ -3355,6 +3391,10 @@ packages:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
 
+  lz-string@1.5.0:
+    resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
+    hasBin: true
+
   magic-string@0.22.5:
     resolution: {integrity: sha512-oreip9rJZkzvA8Qzk9HFs8fZGF/u7H/gtrE8EN6RjKJ9kh2HlC+yQ2QezifqTZfGyiuAV0dRv5a+y/8gBb1m9w==}
 
@@ -3398,6 +3438,14 @@ packages:
     resolution: {integrity: sha512-EGwzEeCcLniFX51DhTpmTom+dSA/MG/OBUDjnWtHbEnjAH180VzUeAw+oE4+Zv+CoYBWyRlYOTR0N8SO9R1PVw==}
     engines: {node: '>= 8.16.2'}
     hasBin: true
+
+  mathjs@11.11.1:
+    resolution: {integrity: sha512-uWrwMrhU31TCqHKmm1yFz0C352njGUVr/I1UnpMOxI/VBTTbCktx/mREUXx5Vyg11xrFdg/F3wnMM7Ql/csVsQ==}
+    engines: {node: '>= 14'}
+    hasBin: true
+
+  matter-js@0.20.0:
+    resolution: {integrity: sha512-iC9fYR7zVT3HppNnsFsp9XOoQdQN2tUyfaKg4CHLH8bN+j6GT4Gw7IH2rP0tflAebrHFw730RR3DkVSZRX8hwA==}
 
   md5.js@1.3.5:
     resolution: {integrity: sha512-xitP+WxNPcTTOgnTJcrhM0xvdPepipPSf3I8EIpGKeFLjt3PlJLIDG3u8EX53ZIubkb+5U2+3rELYpEhHhzdkg==}
@@ -4310,11 +4358,13 @@ packages:
     version: 0.0.0-development
     engines: {node: '>=8.0'}
 
-  scratch-render-fonts@1.0.0-prerelease.20210401210003:
-    resolution: {integrity: sha512-sgU+LIXTLKk4f7FZOv/B61dpvmfpnlXFf912T6T4GpOfzx99JPRhXPyErZWuwPz8NEzthkhpO7iF2AqgzUxJfA==}
+  scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9:
+    resolution: {tarball: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9}
+    version: 1.0.0
 
   scratch-render@0.1.0-prerelease.20211028200436:
     resolution: {integrity: sha512-6IU0mEQpx5ipm2PsmdJXA/MIbrgq5wisn0rOpmCJZQFssyPyZMeanvh6T9j/VlTn13kiDO+67Do2nKRrZa46bA==}
+    version: 0.1.0-prerelease.20211028200436
     peerDependencies:
       scratch-render-fonts: ^1.0.0-prerelease
 
@@ -4324,11 +4374,13 @@ packages:
   scratch-storage@1.3.6:
     resolution: {integrity: sha512-L/7z7SB7cGANsgjyiE+qZNaPEqFHK1yPbNomizkgN3WHGcKRogLvmheR57kOxHNpQzodUTbG+pVVH6fR2ZY1Sg==}
 
-  scratch-storage@2.0.2:
-    resolution: {integrity: sha512-tLlctKjxPyw2H/xXTmEf3obo3ZPC+ORDHj+kig/ucy3JcZKR27QpEXOrUfN9iDh5DXcZpeIgZPqdl5Nw5aGmsQ==}
+  scratch-storage@https://codeload.github.com/PenguinMod/PenguinMod-Storage/tar.gz/96f45f701dc11648bc88fcc5307193d591afea84:
+    resolution: {tarball: https://codeload.github.com/PenguinMod/PenguinMod-Storage/tar.gz/96f45f701dc11648bc88fcc5307193d591afea84}
+    version: 0.0.0-development
 
   scratch-svg-renderer@0.2.0-prerelease.20210727023023:
     resolution: {integrity: sha512-vEGZFFPm03LsHeRnIVQoJBoM3dV23daZCHWM0Yb0Rwa1xvymqTWHXRx8ryL5Q94TyceuguqPVAsE66n5S/0fdQ==}
+    version: 0.2.0-prerelease.20210727023023
     peerDependencies:
       scratch-render-fonts: ^1.0.0-prerelease
 
@@ -4338,8 +4390,8 @@ packages:
   seedrandom@2.4.3:
     resolution: {integrity: sha512-2CkZ9Wn2dS4mMUWQaXLsOAfGD+irMlLEeSP3cMxpGbgyOOzJGFa+MWCOMTOCMyZinHRPxyOj/S/C57li/1to6Q==}
 
-  seedrandom@2.4.4:
-    resolution: {integrity: sha512-9A+PDmgm+2du77B5i0Ip2cxOqqHjgNxnBgglxLcX78A2D6c2rTo61z4jnVABpF4cKeDMDG+cmXXvdnqse2VqMA==}
+  seedrandom@3.0.5:
+    resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
 
   select-hose@2.0.0:
     resolution: {integrity: sha512-mEugaLK+YfkijB4fx0e6kImuJdCIt2LxCRcbEYPqRGCs4F2ogyfZU5IAZRdjCP8JPq2AtdNoC/Dux63d9Kiryg==}
@@ -4787,6 +4839,9 @@ packages:
     resolution: {integrity: sha512-9phl76Cqm6FhSX9Xe1ZUAMLtm1BLkKj2Qd5ApyWkXzsMRaA7dgr81kf4wJmQf/hAvg8EEyJxDo3du/0KlhPiKQ==}
     engines: {node: '>=0.6.0'}
 
+  tiny-emitter@2.1.0:
+    resolution: {integrity: sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==}
+
   tiny-inflate@1.0.3:
     resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
 
@@ -4911,6 +4966,10 @@ packages:
   typed-array-length@1.0.6:
     resolution: {integrity: sha512-/OxDN6OtAk5KBpGb28T+HZc2M+ADtvRxXrKKbUwtsLgdoxgX13hyy7ek6bFRl5+aBs2yZzB0c4CnQfAtVypW/g==}
     engines: {node: '>= 0.4'}
+
+  typed-function@4.2.1:
+    resolution: {integrity: sha512-EGjWssW7Tsk4DGfE+5yluuljS1OGYWiI1J6e8puZz9nTMM51Oug8CD5Zo4gWMsOhq5BI+1bF+rWTm4Vbj3ivRA==}
+    engines: {node: '>= 18'}
 
   typedarray@0.0.6:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
@@ -6104,9 +6163,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.15
 
-  '@magenta/sketch@0.2.0(seedrandom@2.4.4)':
+  '@magenta/sketch@0.2.0(seedrandom@3.0.5)':
     dependencies:
-      '@tensorflow/tfjs': 1.7.4(seedrandom@2.4.4)
+      '@tensorflow/tfjs': 1.7.4(seedrandom@3.0.5)
     transitivePeerDependencies:
       - seedrandom
 
@@ -6153,9 +6212,9 @@ snapshots:
       '@tensorflow/tfjs-converter': 1.7.4(@tensorflow/tfjs-core@1.7.4)
       '@tensorflow/tfjs-core': 1.7.4
 
-  '@tensorflow-models/speech-commands@0.3.9(@tensorflow/tfjs@1.7.4(seedrandom@2.4.4))':
+  '@tensorflow-models/speech-commands@0.3.9(@tensorflow/tfjs@1.7.4(seedrandom@3.0.5))':
     dependencies:
-      '@tensorflow/tfjs': 1.7.4(seedrandom@2.4.4)
+      '@tensorflow/tfjs': 1.7.4(seedrandom@3.0.5)
 
   '@tensorflow-models/universal-sentence-encoder@1.3.3(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)':
     dependencies:
@@ -6184,12 +6243,12 @@ snapshots:
       node-fetch: 2.1.2
       seedrandom: 2.4.3
 
-  '@tensorflow/tfjs-data@1.7.4(@tensorflow/tfjs-core@1.7.4)(seedrandom@2.4.4)':
+  '@tensorflow/tfjs-data@1.7.4(@tensorflow/tfjs-core@1.7.4)(seedrandom@3.0.5)':
     dependencies:
       '@tensorflow/tfjs-core': 1.7.4
       '@types/node-fetch': 2.6.11
       node-fetch: 2.1.2
-      seedrandom: 2.4.4
+      seedrandom: 3.0.5
 
   '@tensorflow/tfjs-layers@1.7.4(@tensorflow/tfjs-core@1.7.4)':
     dependencies:
@@ -6208,11 +6267,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@tensorflow/tfjs@1.7.4(seedrandom@2.4.4)':
+  '@tensorflow/tfjs@1.7.4(seedrandom@3.0.5)':
     dependencies:
       '@tensorflow/tfjs-converter': 1.7.4(@tensorflow/tfjs-core@1.7.4)
       '@tensorflow/tfjs-core': 1.7.4
-      '@tensorflow/tfjs-data': 1.7.4(@tensorflow/tfjs-core@1.7.4)(seedrandom@2.4.4)
+      '@tensorflow/tfjs-data': 1.7.4(@tensorflow/tfjs-core@1.7.4)(seedrandom@3.0.5)
       '@tensorflow/tfjs-layers': 1.7.4(@tensorflow/tfjs-core@1.7.4)
     transitivePeerDependencies:
       - seedrandom
@@ -6269,6 +6328,9 @@ snapshots:
   '@types/offscreencanvas@2019.3.0': {}
 
   '@types/seedrandom@2.4.27': {}
+
+  '@types/trusted-types@2.0.7':
+    optional: true
 
   '@types/webgl-ext@0.0.30': {}
 
@@ -6643,7 +6705,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  babel-loader@8.2.2(@babel/core@7.13.10)(webpack@4.46.0(webpack-cli@3.1.0)):
+  babel-loader@8.2.2(@babel/core@7.13.10)(webpack@4.46.0):
     dependencies:
       '@babel/core': 7.13.10
       find-cache-dir: 3.3.2
@@ -7112,6 +7174,8 @@ snapshots:
 
   commondir@1.0.1: {}
 
+  complex.js@2.4.2: {}
+
   component-emitter@1.3.1: {}
 
   compressible@2.0.18:
@@ -7431,6 +7495,8 @@ snapshots:
 
   decamelize@1.2.0: {}
 
+  decimal.js@10.4.3: {}
+
   decode-html@2.0.0: {}
 
   decode-uri-component@0.2.2: {}
@@ -7554,6 +7620,10 @@ snapshots:
       domelementtype: 1.3.1
 
   dompurify@2.2.7: {}
+
+  dompurify@3.2.1:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
 
   domutils@1.7.0:
     dependencies:
@@ -7764,6 +7834,8 @@ snapshots:
   escalade@3.1.2: {}
 
   escape-html@1.0.3: {}
+
+  escape-latex@1.2.0: {}
 
   escape-string-regexp@1.0.5: {}
 
@@ -8009,7 +8081,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  expose-loader@0.7.5(webpack@4.46.0(webpack-cli@3.1.0)):
+  expose-loader@0.7.5(webpack@4.46.0):
     dependencies:
       webpack: 4.46.0(webpack-cli@3.1.0)
 
@@ -8143,7 +8215,7 @@ snapshots:
       flat-cache: 1.3.4
       object-assign: 4.1.1
 
-  file-loader@2.0.0(webpack@4.46.0(webpack-cli@3.1.0)):
+  file-loader@2.0.0(webpack@4.46.0):
     dependencies:
       loader-utils: 1.4.2
       schema-utils: 1.0.0
@@ -8315,6 +8387,8 @@ snapshots:
       lookup-closest-locale: 6.2.0
 
   forwarded@0.2.0: {}
+
+  fraction.js@4.3.4: {}
 
   fragment-cache@0.2.1:
     dependencies:
@@ -9033,6 +9107,8 @@ snapshots:
       set-function-name: 2.0.2
     optional: true
 
+  javascript-natural-sort@0.7.1: {}
+
   js-md5@0.7.3: {}
 
   js-tokens@3.0.2: {}
@@ -9246,6 +9322,8 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
+  lz-string@1.5.0: {}
+
   magic-string@0.22.5:
     dependencies:
       vlq: 0.2.3
@@ -9290,6 +9368,20 @@ snapshots:
       uc.micro: 1.0.6
 
   marked@0.8.2: {}
+
+  mathjs@11.11.1:
+    dependencies:
+      '@babel/runtime': 7.24.4
+      complex.js: 2.4.2
+      decimal.js: 10.4.3
+      escape-latex: 1.2.0
+      fraction.js: 4.3.4
+      javascript-natural-sort: 0.7.1
+      seedrandom: 3.0.5
+      tiny-emitter: 2.1.0
+      typed-function: 4.2.1
+
+  matter-js@0.20.0: {}
 
   md5.js@1.3.5:
     dependencies:
@@ -9434,9 +9526,9 @@ snapshots:
 
   mkpath@1.0.0: {}
 
-  ml5@0.12.2(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)(encoding@0.1.13)(seedrandom@2.4.4):
+  ml5@0.12.2(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)(encoding@0.1.13)(seedrandom@3.0.5):
     dependencies:
-      '@magenta/sketch': 0.2.0(seedrandom@2.4.4)
+      '@magenta/sketch': 0.2.0(seedrandom@3.0.5)
       '@tensorflow-models/body-pix': 1.1.2(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)
       '@tensorflow-models/coco-ssd': 2.2.3(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)
       '@tensorflow-models/facemesh': 0.0.3(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)
@@ -9444,9 +9536,9 @@ snapshots:
       '@tensorflow-models/knn-classifier': 1.2.1(@tensorflow/tfjs-core@1.7.4)
       '@tensorflow-models/mobilenet': 2.0.3(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)
       '@tensorflow-models/posenet': 2.2.2(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)
-      '@tensorflow-models/speech-commands': 0.3.9(@tensorflow/tfjs@1.7.4(seedrandom@2.4.4))
+      '@tensorflow-models/speech-commands': 0.3.9(@tensorflow/tfjs@1.7.4(seedrandom@3.0.5))
       '@tensorflow-models/universal-sentence-encoder': 1.3.3(@tensorflow/tfjs-converter@1.7.4(@tensorflow/tfjs-core@1.7.4))(@tensorflow/tfjs-core@1.7.4)
-      '@tensorflow/tfjs': 1.7.4(seedrandom@2.4.4)
+      '@tensorflow/tfjs': 1.7.4(seedrandom@3.0.5)
       '@tensorflow/tfjs-converter': 1.7.4(@tensorflow/tfjs-core@1.7.4)
       '@tensorflow/tfjs-core': 1.7.4
       '@tensorflow/tfjs-vis': 1.5.1(@tensorflow/tfjs-core@1.7.4)(encoding@0.1.13)
@@ -10281,11 +10373,11 @@ snapshots:
       jszip: 3.1.5
       pify: 4.0.1
 
-  scratch-render-fonts@1.0.0-prerelease.20210401210003:
+  scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9:
     dependencies:
       base64-loader: 1.0.0
 
-  scratch-render@0.1.0-prerelease.20211028200436(scratch-render-fonts@1.0.0-prerelease.20210401210003)(webpack@4.46.0(webpack-cli@3.1.0)):
+  scratch-render@0.1.0-prerelease.20211028200436(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9)(webpack@4.46.0):
     dependencies:
       grapheme-breaker: 0.3.2
       hull.js: 0.2.10
@@ -10293,9 +10385,9 @@ snapshots:
       linebreak: 0.3.0
       minilog: 3.1.0
       raw-loader: 0.5.1
-      scratch-render-fonts: 1.0.0-prerelease.20210401210003
-      scratch-storage: 1.3.6(webpack@4.46.0(webpack-cli@3.1.0))
-      scratch-svg-renderer: 0.2.0-prerelease.20210727023023(scratch-render-fonts@1.0.0-prerelease.20210401210003)
+      scratch-render-fonts: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9
+      scratch-storage: 1.3.6(webpack@4.46.0)
+      scratch-svg-renderer: 0.2.0-prerelease.20210727023023(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9)
       twgl.js: 4.4.0
     transitivePeerDependencies:
       - webpack
@@ -10306,35 +10398,35 @@ snapshots:
       minilog: 3.1.0
       text-encoding: 0.7.0
 
-  scratch-storage@1.3.6(webpack@4.46.0(webpack-cli@3.1.0)):
+  scratch-storage@1.3.6(webpack@4.46.0):
     dependencies:
       arraybuffer-loader: 1.0.8
       base64-js: 1.3.0
       fastestsmallesttextencoderdecoder: 1.0.22
       js-md5: 0.7.3
       minilog: 3.1.0
-      worker-loader: 2.0.0(webpack@4.46.0(webpack-cli@3.1.0))
+      worker-loader: 2.0.0(webpack@4.46.0)
     transitivePeerDependencies:
       - webpack
 
-  scratch-storage@2.0.2(webpack@4.46.0(webpack-cli@3.1.0)):
+  scratch-storage@https://codeload.github.com/PenguinMod/PenguinMod-Storage/tar.gz/96f45f701dc11648bc88fcc5307193d591afea84(webpack@4.46.0):
     dependencies:
       arraybuffer-loader: 1.0.8
       base64-js: 1.3.0
       fastestsmallesttextencoderdecoder: 1.0.22
       js-md5: 0.7.3
       minilog: 3.1.0
-      worker-loader: 2.0.0(webpack@4.46.0(webpack-cli@3.1.0))
+      worker-loader: 2.0.0(webpack@4.46.0)
     transitivePeerDependencies:
       - webpack
 
-  scratch-svg-renderer@0.2.0-prerelease.20210727023023(scratch-render-fonts@1.0.0-prerelease.20210401210003):
+  scratch-svg-renderer@0.2.0-prerelease.20210727023023(scratch-render-fonts@https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9):
     dependencies:
       base64-js: 1.2.1
       base64-loader: 1.0.0
       dompurify: 2.2.7
       minilog: 3.1.0
-      scratch-render-fonts: 1.0.0-prerelease.20210401210003
+      scratch-render-fonts: https://codeload.github.com/PenguinMod/penguinmod-render-fonts/tar.gz/615e0cd0fad735c407a8c61566c900946cf2bfb9
       transformation-matrix: 1.15.0
 
   script-loader@0.7.2:
@@ -10343,7 +10435,7 @@ snapshots:
 
   seedrandom@2.4.3: {}
 
-  seedrandom@2.4.4: {}
+  seedrandom@3.0.5: {}
 
   select-hose@2.0.0: {}
 
@@ -10912,7 +11004,7 @@ snapshots:
 
   tapable@1.1.3: {}
 
-  terser-webpack-plugin@1.4.5(webpack@4.46.0(webpack-cli@3.1.0)):
+  terser-webpack-plugin@1.4.5(webpack@4.46.0):
     dependencies:
       cacache: 12.0.4
       find-cache-dir: 2.1.0
@@ -10954,6 +11046,8 @@ snapshots:
   timers-browserify@2.0.12:
     dependencies:
       setimmediate: 1.0.5
+
+  tiny-emitter@2.1.0: {}
 
   tiny-inflate@1.0.3: {}
 
@@ -11089,6 +11183,8 @@ snapshots:
       is-typed-array: 1.1.13
       possible-typed-array-names: 1.0.0
 
+  typed-function@4.2.1: {}
+
   typedarray@0.0.6: {}
 
   typescript@5.4.5: {}
@@ -11102,7 +11198,7 @@ snapshots:
       commander: 2.13.0
       source-map: 0.6.1
 
-  uglifyjs-webpack-plugin@1.2.7(webpack@4.46.0(webpack-cli@3.1.0)):
+  uglifyjs-webpack-plugin@1.2.7(webpack@4.46.0):
     dependencies:
       cacache: 10.0.4
       find-cache-dir: 1.0.0
@@ -11632,7 +11728,7 @@ snapshots:
       webpack: 4.46.0(webpack-cli@3.1.0)
       yargs: 12.0.5
 
-  webpack-dev-middleware@3.7.3(webpack@4.46.0(webpack-cli@3.1.0)):
+  webpack-dev-middleware@3.7.3(webpack@4.46.0):
     dependencies:
       memory-fs: 0.4.1
       mime: 2.6.0
@@ -11641,7 +11737,7 @@ snapshots:
       webpack: 4.46.0(webpack-cli@3.1.0)
       webpack-log: 2.0.0
 
-  webpack-dev-server@3.11.2(webpack-cli@3.1.0(webpack@4.46.0))(webpack@4.46.0(webpack-cli@3.1.0)):
+  webpack-dev-server@3.11.2(webpack-cli@3.1.0)(webpack@4.46.0):
     dependencies:
       ansi-html: 0.0.7
       bonjour: 3.5.0
@@ -11673,7 +11769,7 @@ snapshots:
       supports-color: 6.1.0
       url: 0.11.3
       webpack: 4.46.0(webpack-cli@3.1.0)
-      webpack-dev-middleware: 3.7.3(webpack@4.46.0(webpack-cli@3.1.0))
+      webpack-dev-middleware: 3.7.3(webpack@4.46.0)
       webpack-log: 2.0.0
       ws: 6.2.2
       yargs: 13.3.2
@@ -11715,7 +11811,7 @@ snapshots:
       node-libs-browser: 2.2.1
       schema-utils: 1.0.0
       tapable: 1.1.3
-      terser-webpack-plugin: 1.4.5(webpack@4.46.0(webpack-cli@3.1.0))
+      terser-webpack-plugin: 1.4.5(webpack@4.46.0)
       watchpack: 1.7.5
       webpack-sources: 1.4.3
     optionalDependencies:
@@ -11794,13 +11890,13 @@ snapshots:
     dependencies:
       errno: 0.1.8
 
-  worker-loader@1.1.1(webpack@4.46.0(webpack-cli@3.1.0)):
+  worker-loader@1.1.1(webpack@4.46.0):
     dependencies:
       loader-utils: 1.4.2
       schema-utils: 0.4.7
       webpack: 4.46.0(webpack-cli@3.1.0)
 
-  worker-loader@2.0.0(webpack@4.46.0(webpack-cli@3.1.0)):
+  worker-loader@2.0.0(webpack@4.46.0):
     dependencies:
       loader-utils: 1.4.2
       schema-utils: 0.4.7

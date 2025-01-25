@@ -46,6 +46,9 @@ class Keyboard {
         this._keysPressed = [];
         // pm: keep track of hit keys
         this._keysHit = [];
+        this._keysHitOnStep = {}; // key: the key pressed, value: the step they were pressed on
+        // pm: keep track of how long keys have been pressed for
+        this._keyTimestamps = {};
         /**
          * Reference to the owning Runtime.
          * Can be used, for example, to activate hats.
@@ -55,6 +58,20 @@ class Keyboard {
         // tw: track last pressed key
         this.lastKeyPressed = '';
         this._numeralKeyCodesToStringKey = new Map();
+        
+        // after processing all blocks, we can check if this step is after any keys we pressed
+        this.runtime.on("RUNTIME_STEP_END", () => {
+            const newHitKeys = [];
+            for (const key of this._keysHit) {
+                const stepKeyPressedOn = this._keysHitOnStep[key] || -1;
+                if (this.runtime.frameLoop._stepCounter <= stepKeyPressedOn) {
+                    newHitKeys.push(key);
+                }
+            }
+
+            // replace with the keys that are now pressed
+            this._keysHit = newHitKeys;
+        });
     }
 
     /**
@@ -169,21 +186,17 @@ class Keyboard {
                 // pm: key isnt present? we hit it for the first time
                 this.runtime.emit('KEY_HIT', scratchKey);
                 this._keysPressed.push(scratchKey);
+                this._keyTimestamps[scratchKey] = Date.now();
                 // pm: keep track of hit keys
                 this._keysHit.push(scratchKey);
-                // wait 2 ticks then remove from list
-                this.runtime.once("RUNTIME_STEP_START", () => {
-                    this.runtime.once("RUNTIME_STEP_START", () => {
-                        const index = this._keysHit.indexOf(scratchKey);
-                        if (index > -1) {
-                            this._keysHit.splice(index, 1);
-                        }
-                    })
-                })
+                this._keysHitOnStep[scratchKey] = this.runtime.frameLoop._stepCounter;
             }
         } else if (index > -1) {
             // If already present, remove from the list.
             this._keysPressed.splice(index, 1);
+            if (scratchKey in this._keyTimestamps) {
+                delete this._keyTimestamps[scratchKey];
+            }
         }
         // Fix for https://github.com/LLK/scratch-vm/issues/2271
         if (data.hasOwnProperty('keyCode')) {
@@ -194,6 +207,9 @@ class Keyboard {
                     const indexToUnpress = this._keysPressed.indexOf(lastKeyOfSameCode);
                     if (indexToUnpress !== -1) {
                         this._keysPressed.splice(indexToUnpress, 1);
+                        if (scratchKey in this._keyTimestamps) {
+                            delete this._keyTimestamps[lastKeyOfSameCode];
+                        }
                     }
                 }
             }
@@ -230,6 +246,35 @@ class Keyboard {
     // tw: expose last pressed key
     getLastKeyPressed () {
         return this.lastKeyPressed;
+    }
+    // pm: why dont we expose all keys?
+    getAllKeysPressed () {
+        return this._keysPressed;
+    }
+    getKeyTimestamp (keyArg) {
+        if (keyArg === 'any') {
+            // loop through all keys and see which one we have held the longest
+            let oldestTimestamp = Infinity;
+            let found = false;
+            for (const keyName in this._keyTimestamps) {
+                const timestamp = this._keyTimestamps[keyName];
+                if (timestamp < oldestTimestamp) {
+                    oldestTimestamp = timestamp;
+                    found = true;
+                }
+            }
+            if (!found) return 0;
+            return oldestTimestamp;
+        }
+        // everything else
+        const scratchKey = this._keyArgToScratchKey(keyArg);
+        if (!(scratchKey in this._keyTimestamps)) {
+            return 0;
+        }
+        return this._keyTimestamps[scratchKey];
+    }
+    getKeyTimestamps () {
+        return this._keyTimestamps;
     }
 }
 

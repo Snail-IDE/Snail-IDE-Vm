@@ -12,7 +12,6 @@ const { createNoise3D } = require('simplex-noise');
 
 class iygPerlin {
     constructor(runtime) {
-        console.log("nosie ext");
         /**
          * The runtime instantiating this block package.
          * @type {Runtime}
@@ -20,6 +19,7 @@ class iygPerlin {
         this.runtime = runtime;
         this.noise;
         this.seed = 123;
+        this.size = 50;
         this.generator = new MersenneTwister(this.seed);
     }
 
@@ -33,13 +33,14 @@ class iygPerlin {
             color1: '#525252',
             color2: '#636363',
             blocks: [
+                // Hidden
                 {
                     opcode: 'GetNoise',
                     blockType: BlockType.REPORTER,
                     text: formatMessage({
                         id: 'iygPerlin.GetNoise',
-                        default: 'Get noise with seed [SEED] and octave [OCTAVE] at x [X], y [Y], and z [Z]',
-                        description: 'Get seeded noise at a specified x and y and z.'
+                        default: 'Get perlin noise with seed [SEED] and octave [OCTAVE] at x [X], y [Y], and z [Z]',
+                        description: 'Get seeded perlin noise at a specified x and y and z.'
                     }),
                     arguments: {
                         SEED: {
@@ -62,11 +63,85 @@ class iygPerlin {
                             type: ArgumentType.NUMBER,
                             defaultValue: 0
                         }
-                    }
+                    },
+                    hideFromPalette: true
                 },
+                // Hidden
+                {
+                    opcode: 'GetRandomNoise',
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: 'iygPerlin.GetRandomNoise',
+                        default: 'Get noise with seed [SEED] at x [X], y [Y], and z [Z]',
+                        description: 'Get seeded noise with a specified seed at a specified x and y and z.'
+                    }),
+                    arguments: {
+                        SEED: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 123
+                        },
+                        X: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        },
+                        Y: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        },
+                        Z: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        }
+                    },
+                    hideFromPalette: true
+                },
+                // Hidden
+                {
+                    opcode: 'GeneratePerlinNoise',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'iygPerlin.GeneratePerlinNoise',
+                        default: 'Pre-generate perlin noise with seed [SEED] and octave [OCTAVE]',
+                        description: 'Pre-generate seeded perlin noise.'
+                    }),
+                    arguments: {
+                        SEED: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 123
+                        },
+                        OCTAVE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 4
+                        }
+                    },
+                    hideFromPalette: true
+                },
+                // Hidden
+                {
+                    opcode: 'GenerateRandomNoise',
+                    blockType: BlockType.COMMAND,
+                    hideFromPalette: true,
+                    text: formatMessage({
+                        id: 'iygPerlin.GenerateRandomNoise',
+                        default: 'not needed [SEED] [SIZE]',
+                        description: 'Pre-generate seeded noise.'
+                    }),
+                    arguments: {
+                        SEED: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 123
+                        },
+                        SIZE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 50
+                        }
+                    },
+                },
+                // Hidden
                 {
                     opcode: 'getSimplexNoise',
                     blockType: BlockType.REPORTER,
+                    hideFromPalette: true,
                     text: formatMessage({
                         id: 'iygPerlin.getSimplexNoise',
                         default: 'Get simplex noise with seed [SEED] at x [X], y [Y], and z [Z]',
@@ -90,9 +165,96 @@ class iygPerlin {
                             defaultValue: 0
                         }
                     }
-                }
+                },
+
+                // End of hidden stuff
+
+                {
+                    opcode: 'GetNoiseV2',
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: 'iygPerlin.GetNoiseV2',
+                        default: 'Get perlin noise with seed [SEED] and octave [OCTAVE] at x [X], y [Y], and z [Z]',
+                        description: 'Get seeded perlin noise at a specified x and y and z.'
+                    }),
+                    arguments: {
+                        SEED: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 123
+                        },
+                        OCTAVE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 4
+                        },
+                        X: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        },
+                        Y: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        },
+                        Z: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        }
+                    },
+                },
+                {
+                    opcode: 'GetRandomNoiseV2',
+                    blockType: BlockType.REPORTER,
+                    text: formatMessage({
+                        id: 'iygPerlin.GetRandomNoiseV2',
+                        default: 'Get random noise with seed [SEED] at x [X], y [Y], and z [Z]',
+                        description: 'Get seeded random noise with a specified seed at a specified x and y and z.'
+                    }),
+                    arguments: {
+                        SEED: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 123
+                        },
+                        X: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        },
+                        Y: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        },
+                        Z: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        }
+                    }
+                },
+                {
+                    opcode: 'GeneratePerlinNoiseV2',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'iygPerlin.GeneratePerlinNoiseV2',
+                        default: 'Pre-generate perlin noise with seed [SEED] and octave [OCTAVE]',
+                        description: 'Pre-generate seeded perlin noise.'
+                    }),
+                    arguments: {
+                        SEED: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 123
+                        },
+                        OCTAVE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 4
+                        }
+                    }
+                },
             ]
         };
+    }
+
+    goodSeedRandom() {
+        this.generator.init_seed(this.seed);
+        let result = this.generator.random_incl();
+        this.seed = result * 4294967296;
+        return result;
     }
 
     dumbSeedRandom() {
@@ -102,13 +264,61 @@ class iygPerlin {
         return result;
     }
 
-    GetNoise(args, util) {
-        let seed = args.SEED;
-        let perlin_octaves = ((args.OCTAVE === Infinity) ? 4 : args.OCTAVE);
-        let x = args.X + .5;
-        let y = args.Y + .5;
-        let z = args.Z + .5;
+    GeneratePerlinNoise(args, util) {
+        args.X = 0;
+        args.Y = 0;
+        args.Z = 0;
+        this.GetNoise(args, util);
+    }
 
+    GenerateRandomNoise(args, util) {
+        let seed = args.SEED;
+        let size = args.SIZE;
+
+        if (this.noise == null || seed != this.seed) {
+            this.noise = new Array(size);
+            this.seed = seed;
+            for (let i = 0; i < size; i++) {
+                this.noise[i] = new Array(size);
+                for (let j = 0; j < size; j++) {
+                    this.noise[i][j] = new Array(size);
+                    for (let k = 0; k < size; k++) {
+                        this.noise[i][j][k] = this.dumbSeedRandom();
+                    }
+                }
+            }
+            this.seed = seed;
+            this.prev_seed = seed;
+            this.size = size;
+        }
+
+        if (size > this.size && seed == this.seed) {
+            this.seed = this.prev_seed;
+            for (let i = this.size; i < size+1; i++) {
+                this.noise[i] = new Array(size);
+                for (let j = this.size; j < size+1; j++) {
+                    this.noise[i][j] = new Array(size);
+                    for (let k = this.size; k < size+1; k++) {
+                        this.noise[i][j][k] = this.dumbSeedRandom();
+                    }
+                }
+            }
+        }
+    }
+
+    GetRandomNoise(args, util) {
+        let seed = args.SEED;
+        let x = args.X;
+        let y = args.Y;
+        let z = args.Z;
+        let pre_seed = this.seed;
+        this.seed = seed+x+y*1000+z*10000;
+        let result = this.dumbSeedRandom();
+        this.seed = pre_seed;
+        return result;
+    }
+
+    generatePerlin(seed, perlin_octaves, rand, x, y, z) {
         let perlin_amp_falloff = 0.5;
         const scaled_cosine = i => 0.5 * (1.0 - Math.cos(i * Math.PI));
         const PERLIN_SIZE = 4095;
@@ -121,7 +331,7 @@ class iygPerlin {
             this.perlin = new Array(PERLIN_SIZE + 1);
             this.seed = seed;
             for (let i = 0; i < PERLIN_SIZE + 1; i++) {
-                this.perlin[i] = this.dumbSeedRandom();
+                this.perlin[i] = rand();
             }
             this.seed = seed;
         }
@@ -197,6 +407,48 @@ class iygPerlin {
         return r % 1.0;
     }
 
+    GetNoise(args, util) {
+        let seed = args.SEED;
+        let perlin_octaves = ((args.OCTAVE === Infinity) ? 4 : args.OCTAVE);
+        let x = args.X + .5;
+        let y = args.Y + .5;
+        let z = args.Z + .5;
+
+        return this.generatePerlin(seed, perlin_octaves, this.dumbSeedRandom.bind(this), x, y, z);
+    }
+
+    // ----- V2 -----
+    GetNoiseV2(args, util) {
+        let seed = args.SEED;
+        let perlin_octaves = ((args.OCTAVE === Infinity) ? 4 : args.OCTAVE);
+        let x = args.X + .5;
+        let y = args.Y + .5;
+        let z = args.Z + .5;
+
+        return this.generatePerlin(seed, perlin_octaves, this.goodSeedRandom.bind(this), x, y, z);
+    }
+
+    // ----- V2 -----
+    GetRandomNoiseV2(args, util) {
+        let seed = args.SEED;
+        let x = args.X;
+        let y = args.Y;
+        let z = args.Z;
+        let pre_seed = this.seed;
+        this.seed = seed + (x * 743) + (y * 942 ) + (z * 645);
+        let result = this.goodSeedRandom.bind(this)();
+        this.seed = pre_seed;
+        return result;
+    }
+
+    // ----- V2 -----
+    GeneratePerlinNoiseV2(args, util) {
+        args.X = 0;
+        args.Y = 0;
+        args.Z = 0;
+        this.GetNoiseV2(args, util);
+    }
+        
     getSimplexNoise(args) {
         const seed = args.SEED;
         const x = args.X;

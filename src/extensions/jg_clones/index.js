@@ -211,6 +211,7 @@ class JgCloneToolBlocks {
                         "mosaic effect",
                         "brightness effect",
                         "ghost effect",
+                        "saturation effect",
                         "red effect",
                         "green effect",
                         "blue effect",
@@ -350,6 +351,8 @@ class JgCloneToolBlocks {
                 return clone.effects.blue;
             case "opaque effect":
                 return clone.effects.opaque;
+            case "saturation effect":
+                return clone.effects.saturation;
             default:
                 return clone[property];
         }
@@ -414,6 +417,8 @@ class JgCloneToolBlocks {
                 return mainSprite.effects.blue;
             case "opaque effect":
                 return mainSprite.effects.opaque;
+            case "saturation effect":
+                return mainSprite.effects.saturation;
             default:
                 return mainSprite[property];
         }

@@ -5,9 +5,6 @@ const Cast = require('../../util/cast');
 const Legacy = require('./legacy');
 
 const Icon = require("./icon.svg");
-/**
- * yo we got our own bapi now 😎
- */
 
 /**
  * Class for Scratch Authentication blocks
@@ -67,7 +64,7 @@ class JgScratchAuthenticateBlocks {
                     disableMonitor: true,
                     hideFromPalette: true,
                     arguments: {
-                        NAME: { type: ArgumentType.STRING, defaultValue: "PenguinMod" }
+                        NAME: { type: ArgumentType.STRING, defaultValue: "Snail IDE" }
                     },
                     blockType: BlockType.REPORTER
                 },
@@ -185,8 +182,8 @@ class JgScratchAuthenticateBlocks {
         nameSplit.pop();
         const projectName = Cast.toString(nameSplit.join(" - "));
         return [
-            projectName === 'PenguinMod' ? 'Project' : projectName,
-            'PenguinMod',
+            projectName === 'Snail IDE' ? 'Project' : projectName,
+            'Snail IDE',
             'Game',
         ];
     }

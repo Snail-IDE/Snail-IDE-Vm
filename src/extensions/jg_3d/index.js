@@ -20,6 +20,10 @@ function toRad(deg) {
 function toDeg(rad) {
     return rad * (180 / Math.PI);
 }
+function normalize(vec) {
+    const length = Math.sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+    return new Three.Vector3(vec.x / length, vec.y / length, vec.z / length);
+}
 function toDegRounding(rad) {
     const result = toDeg(rad);
     if (!String(result).includes('.')) return result;
@@ -42,7 +46,13 @@ class Jg3DBlocks {
         this.runtime = runtime;
 
         this.three = Three;
-
+        // expose addons and that for the funnis
+        this.BufferGeometryUtils = BufferGeometryUtils;
+        this.ConvexGeometry = ConvexGeometry;
+        this.OBJLoader = OBJLoader;
+        this.GLTFLoader = GLTFLoader;
+        this.FBXLoader = FBXLoader;
+        
         // prism has screenshots, lets tell it to use OUR canvas for them
         this.runtime.prism_screenshot_checkForExternalCanvas = true;
         this.runtime.prism_screenshot_externalCanvas = null;
@@ -523,6 +533,7 @@ class Jg3DBlocks {
                                 this.savedMeshes[url] = object;
                             }
                             object.name = name;
+                            console.log(object);
                             this.existingSceneObjects.push(name);
                             object.isPenguinMod = true;
                             object.isMeshObj = true;
@@ -688,7 +699,13 @@ class Jg3DBlocks {
         if (!["x", "y", "z"].includes(v)) return "";
         return Cast.toNumber(object.scale[v]) * 100;
     }
-
+    getObjectColor(args) {
+        if (!this.scene) return "";
+        const name = Cast.toString(args.NAME);
+        const object = this.scene.getObjectByName(name);
+        if (!object) return '';
+        return "#" + object.material.color.getHexString()
+    }
     deleteObject(args) {
         if (!this.scene) return;
         const name = Cast.toString(args.NAME);
@@ -852,11 +869,10 @@ class Jg3DBlocks {
     }
 
     raycastResultToReadable(result) {
-        const newResult = Clone.simple(result);
-        for (const result of newResult) {
-            // for each collision
-            result.object = result.object.object.name;
-        }
+        const newResult = Clone.simple(result).map((intersection) => {
+            console.log(intersection.object.object.name);
+            return intersection.object.object.name;
+        })
         return newResult;
     }
 
@@ -868,11 +884,11 @@ class Jg3DBlocks {
             y: Cast.toNumber(args.Y),
             z: Cast.toNumber(args.Z),
         };
-        const direction = {
-            x: Cast.toNumber(args.DX),
-            y: Cast.toNumber(args.DY),
-            z: Cast.toNumber(args.DZ),
-        };
+        const direction = normalize({
+            x: toRad(Cast.toNumber(args.DX)),
+            y: toRad(Cast.toNumber(args.DY)),
+            z: toRad(Cast.toNumber(args.DZ)),
+        });
         ray.set(new Three.Vector3(origin.x, origin.y, origin.z), new Three.Vector3(direction.x, direction.y, direction.z));
         const intersects = ray.intersectObjects(this.scene.children, true);
         if (intersects.length === 0) return '';
@@ -897,16 +913,16 @@ class Jg3DBlocks {
             y: Cast.toNumber(args.Y),
             z: Cast.toNumber(args.Z),
         };
-        const direction = {
-            x: Cast.toNumber(args.DX),
-            y: Cast.toNumber(args.DY),
-            z: Cast.toNumber(args.DZ),
-        };
+        const direction = normalize({
+            x: toRad(Cast.toNumber(args.DX)),
+            y: toRad(Cast.toNumber(args.DY)),
+            z: toRad(Cast.toNumber(args.DZ)),
+        });
         ray.set(new Three.Vector3(origin.x, origin.y, origin.z), new Three.Vector3(direction.x, direction.y, direction.z));
         const intersects = ray.intersectObjects(this.scene.children, true);
         if (intersects.length === 0) return '[]';
-        const result = this.raycastResultToReadable(intersects);
-        return JSON.stringify(result);
+        //const result = this.raycastResultToReadable(intersects);
+        return JSON.stringify(intersects);
     }
     rayCollisionCameraArray() {
         if (!this.scene) return '[]';
@@ -915,8 +931,53 @@ class Jg3DBlocks {
         ray.setFromCamera(new Three.Vector2(), this.camera);
         const intersects = ray.intersectObjects(this.scene.children, true);
         if (intersects.length === 0) return '[]';
+        //const result = this.raycastResultToReadable(intersects);
+        return JSON.stringify(intersects);
+    }
+
+    rayCollisionDistance(args) {
+        if (!this.scene) return '';
+        const origin = new Three.Vector3(
+            Cast.toNumber(args.X),
+            Cast.toNumber(args.Y),
+            Cast.toNumber(args.Z),
+        );
+        const direction = normalize(new Three.Vector3(
+            toRad(Cast.toNumber(args.DX)),
+            toRad(Cast.toNumber(args.DY)),
+            toRad(Cast.toNumber(args.DZ)),
+        ));
+        const ray = new Three.Raycaster(origin, direction, 0, args.DIS);
+        const intersects = ray.intersectObjects(this.scene.children, true);
+        if (intersects.length === 0) return '';
+        const first = intersects[0];
+        return first.object.name;
+    }
+    rayCollisionArrayDistance(args) {
+        if (!this.scene) return '[]';
+        const origin = new Three.Vector3(
+            Cast.toNumber(args.X),
+            Cast.toNumber(args.Y),
+            Cast.toNumber(args.Z),
+        );
+        const direction = normalize(new Three.Vector3(
+            toRad(Cast.toNumber(args.DX)),
+            toRad(Cast.toNumber(args.DY)),
+            toRad(Cast.toNumber(args.DZ)),
+        ));
+        const ray = new Three.Raycaster(origin, direction, 0, args.DIS);
+        const intersects = ray.intersectObjects(this.scene.children, true);
+        if (intersects.length === 0) return '[]';
         const result = this.raycastResultToReadable(intersects);
         return JSON.stringify(result);
+    }
+    getObjectParent(args) {
+        if (!this.scene) return '';
+        const name = Cast.toString(args.NAME);
+        const object = this.scene.getObjectByName(name);
+        if (!object) return '';
+        if (!object.parent) return '';
+        return object.parent.name;
     }
 }
 

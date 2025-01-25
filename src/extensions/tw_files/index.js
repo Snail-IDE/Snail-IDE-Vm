@@ -9,6 +9,7 @@ const MODE_IMMEDIATELY_SHOW_SELECTOR = 'selector';
 const MODE_ONLY_SELECTOR = 'only-selector';
 const ALL_MODES = [MODE_MODAL, MODE_IMMEDIATELY_SHOW_SELECTOR, MODE_ONLY_SELECTOR];
 let openFileSelectorMode = MODE_MODAL;
+let lastOpenedFileName = '';
 
 const AS_TEXT = 'text';
 const AS_BUFFER = 'buffer';
@@ -109,6 +110,7 @@ const showFilePrompt = (accept, as) => new Promise((_resolve) => {
     outer.addEventListener('drop', (e) => {
         const file = e.dataTransfer.files[0];
         if (file) {
+            lastOpenedFileName = file.name;
             e.preventDefault();
             readFile(file);
         }
@@ -142,6 +144,7 @@ const showFilePrompt = (accept, as) => new Promise((_resolve) => {
         // @ts-expect-error
         const file = e.target.files[0];
         if (file) {
+            lastOpenedFileName = file.name;
             readFile(file);
         }
     });
@@ -214,8 +217,9 @@ class Files {
         return {
             id: 'twFiles',
             name: 'Files',
-            color1: '#ffbb00',
-            color2: '#ffaa00',
+            color1: '#fcb103',
+            color2: '#db9a37',
+            color3: '#db8937',
             blocks: [
                 {
                     opcode: 'showPicker',
@@ -296,6 +300,13 @@ class Files {
                             menu: 'automaticallyOpen'
                         }
                     }
+                },
+                '---',
+                {
+                    opcode: 'getFileName',
+                    blockType: BlockType.REPORTER,
+                    text: 'last opened file name',
+                    disableMonitor: true
                 }
             ],
             menus: {
@@ -359,6 +370,10 @@ class Files {
         } else {
             console.warn(`unknown mode`, args.mode);
         }
+    }
+
+    getFileName() {
+        return lastOpenedFileName || '';
     }
 }
 

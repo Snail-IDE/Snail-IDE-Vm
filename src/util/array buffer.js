@@ -30,6 +30,13 @@ class bufferUtil {
         });
         return view.buffer;
     }
+
+    uint8ArrayToBuffer (array) {
+        return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset);
+    }
+    bufferToUint8Array (buffer) {
+        return new Uint8Array(buffer);
+    }
     
     /**
      * converts a buffer into a string of hex bytes
